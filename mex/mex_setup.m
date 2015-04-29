@@ -17,9 +17,12 @@ unix('rm *.mexa64')
 % % -------------------------------------------------------------------------
 % %                   build primaldual solver
 % % -------------------------------------------------------------------------
-cmd = sprintf('mex pd_wrapper.cpp CXXFLAGS="-O -msse2 -msse -msse3 -fPIC -DHAVE_SSE -DHAVE_MATLAB" -I%s ', CPP_SRC);
-% uncomment this to TURN OFF SSE:
-% cmd = sprintf('mex pd_wrapper.cpp CXXFLAGS="-O -fPIC -DHAVE_MATLAB" -I%s ', CPP_SRC);
+CXXFLAGS = '-DNDEBUG -O3 -fPIC -DHAVE_MATLAB -DHAVE_SSE -DHAVE_AVX -march=native -mtune=native';
+% uncomment this to TURNF OFF AVX:
+% CXXFLAGS = '-DNDEBUG -O3 -fPIC -DHAVE_MATLAB -DHAVE_SSE -march=native -mtune=native';
+% uncomment this to TURN OFF SSE+AVX:
+% CXXFLAGS = '-O -fPIC -DHAVE_MATLAB';
+cmd = sprintf('mex pd_wrapper.cpp -output pd_wrapper CXXFLAGS="%s" -I%s ', CXXFLAGS, CPP_SRC);
 cmd = sprintf('%s %s/solver_primaldual.cpp', cmd, CPP_SRC);
 cmd = sprintf('%s %s/bcv_diff_ops.cpp', cmd, CPP_SRC);
 cmd = sprintf('%s %s/sparse_op.cpp', cmd, CPP_SRC);

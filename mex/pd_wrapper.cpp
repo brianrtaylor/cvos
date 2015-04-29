@@ -96,7 +96,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     data = mxGetField(problem, 0, "constraints");
     int nocc_constraints = (int)mxGetM(data);    
     // ------------------------------------------------------------------//
-    if (((int)mxGetM(data) == 2) || ((int)mxGetN(data) !=2)) { 
+    if ((int)mxGetN(data) !=2) { 
         mexPrintf("'constraints' should be a Nx2 array.\n");
         return;
     }
@@ -112,7 +112,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     // --------------------------------------------------------------------
     mxGetScalarFromStruct(&params.prob.nnodes, problem, "nnodes");
     mxGetScalarFromStruct(&params.prob.nedges, problem, "nedges");
-    mxGetScalarFromStruct(&params.prob.tau2, problem, "tau2");
     mxGetScalarFromStruct(&params.prob.solve_pixelwise, problem, "SOLVE_PIXELWISE");
 
     mxGetScalarFromStruct(&params.opt.verbosity, problem, "verbosity");
@@ -121,9 +120,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     mxGetScalarFromStruct(&params.opt.max_iterations, problem, "max_iterations");
   
     mxGetScalarFromStruct(&params.opt.layer_upper_bound, problem, "layer_upper_bound");
-    mxGetScalarFromStruct(&params.opt.use_both_penalties, problem, "use_both_penalties");
-    mxGetScalarFromStruct(&params.opt.use_ell_infinity, problem, "USE_ELL_INFINITY");
- 
+
     mxGetScalarFromStruct(&params.opt.sigma_c, problem, "sigma_c");
     mxGetScalarFromStruct(&params.opt.sigma_y, problem, "sigma_y");
     mxGetScalarFromStruct(&params.opt.fx_truth, problem, "fx_truth");
@@ -305,13 +302,11 @@ primaldual_params init_params_struct() {
     params.opt.max_iterations = 10000;
     params.opt.fx_tolerance = 0; // set to 0 to avoid expensive evaluations
     params.opt.dx_tolerance = 1e-9;
-    params.opt.verbosity = 0; // silent execution     
-    params.opt.use_ell_infinity = 0; 
+    params.opt.verbosity = 1000000; // silent execution     
     params.opt.layer_upper_bound = 0;
     params.opt.use_temporal_penalty = 0;
     params.opt.fx_truth = 0;
     params.opt.fx_truth_eps = 0;    
-    params.opt.use_both_penalties = 0;
     params.prob.solve_pixelwise = 1;
     params.opt.use_initial_layers = 0;
     return params;
@@ -323,13 +318,11 @@ void print_primaldual_params(const primaldual_params& params) {
     mexPrintf("nodes: %d, edges: %d\n", params.prob.nnodes, params.prob.nedges);
     mexPrintf("rows: %d, cols: %d\n", params.prob.rows, params.prob.cols);
     
-    mexPrintf("use_ell_infinity : %d\n", params.opt.use_ell_infinity);
-    mexPrintf("use_both_penalties : %d\n", params.opt.use_both_penalties);    
     mexPrintf("layer_upper_bound: %f\n", params.opt.layer_upper_bound);
     mexPrintf("use_temporal_penalty (fg prior): %d\n", params.opt.use_temporal_penalty);
     float mu_tau1 = accumulate( params.prob.tau1.begin(), 
                     params.prob.tau1.end(), 0.0f) / params.prob.tau1.size();
-    mexPrintf("tau1 (L1): %f tau2 (L-inf): %f\n", mu_tau1, params.prob.tau2);
+    mexPrintf("tau1 (L1): %f\n", mu_tau1 );
     mexPrintf("weights size: %d\n", params.prob.weights.size() );
     mexPrintf("occweights size: %d\n", params.prob.occweights.size() );
     mexPrintf("solve pixelwise: %d\n", params.prob.solve_pixelwise );

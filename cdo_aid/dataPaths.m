@@ -1170,6 +1170,12 @@ data(k).img_path = [BASE_PATH,'/', data(k).sequence_name, '/'];
 data(k).extension = 'png';
 k=k+1;
 % ------------------------------------------------------------------------
+data(k).sequence_name = 'pierrot_le_fou1';
+data(k).flow_path = [BASE_PATH, '/', data(k).sequence_name, '/flow/'];
+data(k).img_path = [BASE_PATH,'/', data(k).sequence_name, '/'];
+data(k).extension = 'png';
+k=k+1;
+% ------------------------------------------------------------------------
 
 % compute hashes for strings
 for ii=1:length(data)
