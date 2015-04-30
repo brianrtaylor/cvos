@@ -1,13 +1,13 @@
 %-------------------------------------------------------------------------
-% runs some code to generate the output I want to show
+% runs the cvos framework on a specific sequence as specified by ttaobdData
 %
 % @param: model: appropriate model choices follow
 % * fxf  : frame by frame or basic (same as ayvaci)
 % * fxfperturb  : frame by frame or basic + perturbation (didn't use this in cvpr15)
 % * alp  : ayvaci's PAMI12 method to temporally integrate cues
-% * full : our whole system with boxes and all that jazz
-%
-% week17_run: to run a bunch from the shell
+% * full : our full system with foreground prior, persitent boundaries, 
+%   aggregated cues + implementation details (e.g. constraint perturbation, 
+%   local shape classifiers) and the like
 %-------------------------------------------------------------------------
 function weekCR_run(seqs, model, dataset)
 setup;
@@ -34,16 +34,15 @@ PKG.CHECKPOINT = 10;
 PKG.DO_CROSSBILATERALFILTERFLOW = true;
 PKG.DO_CONSTRAINT_DIVWEIGHT = true;
 
-PKG.VIS = 499; % prints nothing
+PKG.VIS = 499; % parameter to determine how much visualization is displayed
 
 % weights / parameters:
-PKG.TAU1 = 5e-4; % 0.001;
+PKG.TAU1 = 5e-4;
 PKG.TAU2 = 0.5;
 PKG.LAMBDA = 0.5;
 PKG.PAIR = 1.0;
 
 PKG.PROB_FG = 0.0005; %0.0005
-
 
 PKG.BOXHELP = true;
 PKG.PROB_BOX_FG = 0.0005; % 0.005;
@@ -79,7 +78,7 @@ if strcmp(model, 'fullboxfig');
 elseif strcmp(model, 'fullbg');
   PKG.PROB_BG = 0.001;
   outpath = '/plot/btay/projects/detachable/cdov/week20-cdov-r0.6-fullbg';
-elseif strcmp(model, 'fullnobox'); % full but no constraint perturbation 
+elseif strcmp(model, 'fullnobox'); % full but no local shape classifiers
   PKG.BOXHELP = false;
   outpath = '/plot/btay/projects/detachable/cdov/week20-cdov-r0.5-fullnobox';
 elseif strcmp(model, 'fullnop'); % full but no constraint perturbation 
@@ -106,12 +105,8 @@ elseif strcmp(model, 'fxfnocbf');
   PKG.DO_CONS_PERTURB = false; % not necessary but just in case
   PKG.DO_CONS_NOW_PERTURB = false;
   PKG.DO_FORBACKCAUSAL = false;
-  PKG.DO_CROSSBILATERALFILTERFLOW = false; % MAGIC CHANGE FOR NEW EXPERIMENTS 20150323
-  % fxf outpath: not changing this because this should be fine
-  % nothing's changed except that we have to redo the first and last frame
-  % outpath = '/plot/btay/projects/detachable/cdov/week20-cdov-r0.5-fxf'; % fxf
+  PKG.DO_CROSSBILATERALFILTERFLOW = false; % CHANGE FOR NEW EXPERIMENTS 20150323
   outpath = '/plot/btay/projects/detachable/cdov_cvpr15/wcr-cdov-r0.6-fxfnocbf'; % fxf
-  % outpath = '/pad_local/btay/projects/tao/weekCR_cvpr15/wcr-cdov-r0.6-fxfnocbf/';
 elseif strcmp(model, 'fxf');
   PKG.CAUSAL = false;
   PKG.WEIGHTSHELP = false; % should be set not to help, but just in case
@@ -121,10 +116,6 @@ elseif strcmp(model, 'fxf');
   PKG.DO_CONS_PERTURB = false; % not necessary but just in case
   PKG.DO_CONS_NOW_PERTURB = false;
   PKG.DO_FORBACKCAUSAL = false;
-  % fxf outpath: not changing this because this should be fine
-  % nothing's changed except that we have to redo the first and last frame
-  % outpath = '/plot/btay/projects/detachable/cdov/week20-cdov-r0.5-fxf'; % fxf
-  % outpath = '/pad_local/btay/projects/tao/weekCR_cvpr15/wcr-cdov-r0.6-fxf/';
   outpath = '/plot/btay/projects/detachable/cdov_cvpr15/wcr-cdov-r0.6-fxf'; % fxf
 elseif strcmp(model, 'alp');
   PKG.CAUSAL = true;
@@ -135,7 +126,6 @@ elseif strcmp(model, 'alp');
   PKG.DO_FORBACKCAUSAL = false;
   PKG.DO_CONS_PERTURB = false; % not necessary but just in case
   PKG.DO_CONS_NOW_PERTURB = false;
-  % outpath = '/plot/btay/projects/detachable/cdov/week20-cdov-r0.5-alp'; % alp
   outpath = '/plot/btay/projects/detachable/cdov_cvpr15/wcr-cdov-r0.6-alp'; % alp
 elseif strcmp(model, 'wfg');
   PKG.CAUSAL = true;
@@ -146,7 +136,6 @@ elseif strcmp(model, 'wfg');
   PKG.DO_FORBACKCAUSAL = false;
   PKG.DO_CONS_PERTURB = false; % not necessary but just in case
   PKG.DO_CONS_NOW_PERTURB = false;
-  % outpath = '/plot/btay/projects/detachable/cdov/week20-cdov-r0.5-wfg'; % alp
   outpath = '/plot/btay/projects/detachable/cdov_cvpr15/wcr-cdov-r0.6-wfg'; % alp
 elseif strcmp(model, 'fxfperturb');
   PKG.CAUSAL = false;
@@ -159,17 +148,15 @@ elseif strcmp(model, 'fxfperturb');
   PKG.DO_FORBACKCAUSAL = false;
   outpath = '/plot/btay/projects/detachable/cdov/week20-cdov-r0.6-fxfperturb'; % fxfperturb
 end
-% outpath = sprintf('%s-%s/', outpath, dataset);
 PKG.outpath = outpath;
 try
-if ~exist(outpath, 'dir'); createRequiredFolders(outpath); end;
+  if ~exist(outpath, 'dir'); createRequiredFolders(outpath); end;
 catch e
-display(e)
-keyboard;
+  display(e); keyboard; exit;
 end
 
 %----------------------------------------------------------------------------
-% runW
+% run the framework
 %----------------------------------------------------------------------------
 for sid = seqs;
   s = num2str(sid{1});
