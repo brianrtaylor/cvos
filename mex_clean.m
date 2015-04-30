@@ -3,7 +3,7 @@ fprintf('--------------------------------------------------------------\n')
 fprintf(' Accurate Fast Marching \n')
 fprintf('--------------------------------------------------------------\n')
 cd('3rdparty/FastMarching_version3b');
-unix('rm *.mexa64 -v');
+unix('rm {functions/,shortestpath/}*.mexa64 -v');
 cd('../../')
 
 fprintf('--------------------------------------------------------------\n')

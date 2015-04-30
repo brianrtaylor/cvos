@@ -1,11 +1,11 @@
 %----------------------------------------------------------------------------%
-% cdov(DATA, PKG)
+% cvos(DATA, PKG)
 %
-% causal detachable objects
+% causal video object segmentation from persistence of occlusions
 %
 % @param: DATA : case number or name for sequence to run
 %----------------------------------------------------------------------------%
-function [out, etc] = cdov(DATA, PKG, sup)
+function [out, etc] = cvos(DATA, PKG, sup)
 %----------------------------------------------------------------------------%
 % some startup + parameters
 %----------------------------------------------------------------------------%
@@ -103,7 +103,7 @@ out_fname = sprintf(['%s/%s_results_temporal_fg' ...
   params.TAU1, params.TAU2, params.PAIR, params.LAMBDA);
 
 % btay
-out_fname2 = sprintf(['%s/%s_cdovresults_temporal_fg' ...
+out_fname2 = sprintf(['%s/%s_cvosresults_temporal_fg' ...
   '=%4.3f_%f_%f_%f_%f.mat'], outpath, seq, ...
   params.PROB_FG, params.TAU1, params.TAU2, params.PAIR, params.LAMBDA);
 out_working_fname2 = [out_fname2, '.running'];
@@ -138,7 +138,7 @@ end
 
 %-----------------------------------------------------------------------
 %-----------------------------------------------------------------------
-% Work for this execution of cdov
+% Work for this execution of cvos
 %-----------------------------------------------------------------------
 %-----------------------------------------------------------------------
 
@@ -1038,11 +1038,11 @@ for k = BEGIN:FINISH;
       opts_boxes, nameStr, object_mean_uvf_map, FINISH);
 
     if (k == 2); % first frame
-      cdov_lite_start(params, ADD, k - 1);
+      cvos_lite_start(params, ADD, k - 1);
     elseif ~params.DO_FORBACKCAUSAL; % end frame 
-      cdov_lite_finish(params, ADD, k + 1);
+      cvos_lite_finish(params, ADD, k + 1);
     elseif params.DO_FORBACKCAUSAL; % end frame
-      cdov_lite_start(params, ADD, k + 1);
+      cvos_lite_start(params, ADD, k + 1);
     end
   end
 end
