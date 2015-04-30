@@ -11,13 +11,12 @@
 
 using namespace std;
 
-#define LOG2PI 1.837877066409345
-
 // [mu_fg, cov_fg, pi_fg, mu_bg, cov_bg, pi_bg] = 
-//  learn_constraint_gmm_mex( I0, occd_smooth, occr_smooth, W_binary, PTS1, PTS2, ...
-//                    EPS, NUM_GMM_CLUSTERS, NUM_GMM_REPETITIONS, NUM_GMM_ITERATIONS) 
+//  learn_constraint_gmm_mex( I0, occd_smooth, occr_smooth,
+//                          W_binary, layers, PTS1, PTS2, groups, EPS, params) 
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
-    // --------------------------------------------------------------------    
+    // --------------------------------------------------------------------  
+    if (nrhs != 10) { mexPrintf("incorrect number of arguments.\n"); return; }
     double* I0   = (double*)mxGetPr( prhs[0] );
     mxLogical* occd_smooth = (mxLogical*)mxGetPr( prhs[1] );
     mxLogical* occr_smooth = (mxLogical*)mxGetPr( prhs[2] );
@@ -28,19 +27,25 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     double* groups = (double*)mxGetPr( prhs[7] );
     
     int EPS = (int)mxGetScalar( prhs[8] );
-    int NUM_GMM_CLUSTERS = (int)mxGetScalar( prhs[9] );
-    int NUM_GMM_REPETITIONS = (int)mxGetScalar( prhs[10] );
-    int NUM_GMM_ITERATIONS = (int)mxGetScalar( prhs[11] );
+
+    int NUM_GMM_CLUSTERS    = (int)mxGetScalar( 
+                            mxGetField(prhs[9], 0, "NUM_GMM_CLUSTERS") );
+    int NUM_GMM_REPETITIONS = (int)mxGetScalar( 
+                            mxGetField(prhs[9], 0, "NUM_GMM_REPETITIONS") );
+    int NUM_GMM_ITERATIONS  = (int)mxGetScalar( 
+                            mxGetField(prhs[9], 0, "NUM_GMM_ITERATIONS") );
+//     mexPrintf("num-gmm-clusters: %d\n", NUM_GMM_CLUSTERS);
+//     mexPrintf("num-gmm-repetitions: %d\n", NUM_GMM_REPETITIONS);
+//     mexPrintf("num-gmm-iterations: %d\n", NUM_GMM_ITERATIONS);
+    
     
     mwSize* sz = (mwSize*)mxGetDimensions( prhs[0] );
     int rows = sz[0];
     int cols = sz[1];
     int chan = sz[2];
     if (chan != 3) { mexPrintf("not a 3-channel image\n"); return; }
-
-  int ncons = mxGetM(prhs[5]); //max( mxGetM(prhs[5]), mxGetN(prhs[5]) );
-
-  bool LAYER_MASK_GIVEN = (int)max( mxGetM(prhs[4]), mxGetN(prhs[4]) ) > 0;
+    int ncons = mxGetM(prhs[5]); //max( mxGetM(prhs[5]), mxGetN(prhs[5]) );
+    bool LAYER_MASK_GIVEN = (int)max( mxGetM(prhs[4]), mxGetN(prhs[4]) ) > 0;
  
   
   int ngroups = 0;

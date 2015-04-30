@@ -149,17 +149,17 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
   params.NUM_STRETCH = 2*params.MAX_STRETCH + 1;
   params.NUM_SHIFT = params.MAX_SHIFT*2+1;
 
-  mexPrintf("edge-distance-cost: %f\n", params.EDGE_DISTANCE_COST);
-  mexPrintf("translation-cost: %f\n",   params.TRANSLATION_COST);
-  mexPrintf("max-shift: %d\n",          params.MAX_SHIFT);
-  mexPrintf("num-shift: %d\n",          params.NUM_SHIFT);
-  mexPrintf("num-rotation: %d\n",       params.NUM_ROTATION);
-  mexPrintf("max-rotation: %f\n",       params.MAX_ROTATION);
-  mexPrintf("rotation-cost: %f\n",      params.ROTATION_COST);
-  mexPrintf("max-stretch: %f\n",        params.MAX_STRETCH);
-  mexPrintf("num-stretch: %d\n",        params.NUM_STRETCH);
-  mexPrintf("stretch-cost: %f\n",       params.STRETCH_COST);
-  mexPrintf("invalid-cost: %f\n",       params.INVALID_COST);
+//   mexPrintf("edge-distance-cost: %f\n", params.EDGE_DISTANCE_COST);
+//   mexPrintf("translation-cost: %f\n",   params.TRANSLATION_COST);
+//   mexPrintf("max-shift: %d\n",          params.MAX_SHIFT);
+//   mexPrintf("num-shift: %d\n",          params.NUM_SHIFT);
+//   mexPrintf("num-rotation: %d\n",       params.NUM_ROTATION);
+//   mexPrintf("max-rotation: %f\n",       params.MAX_ROTATION);
+//   mexPrintf("rotation-cost: %f\n",      params.ROTATION_COST);
+//   mexPrintf("max-stretch: %f\n",        params.MAX_STRETCH);
+//   mexPrintf("num-stretch: %d\n",        params.NUM_STRETCH);
+//   mexPrintf("stretch-cost: %f\n",       params.STRETCH_COST);
+//   mexPrintf("invalid-cost: %f\n",       params.INVALID_COST);
   
   // --------------------------------------------------------------------//
   sz = (mwSize*)mxGetDimensions( prhs[0] );
