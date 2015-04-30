@@ -6,12 +6,9 @@
 #include <cstring>
 #include <cmath>
 #include <vector>
+#include "cvos_common.h"
 
 using namespace std;
-
-
-#define MAT2C(x) ((x)-1)
-#define C2MAT(x) ((x)+1)
 
 void print_usage() { 
     mexPrintf("[unique_pairs, score_pairs, ind_pairs] = ...\n");

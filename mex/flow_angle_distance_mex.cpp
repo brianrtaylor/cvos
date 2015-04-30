@@ -6,14 +6,13 @@
 #include <cstring>
 #include <cmath>
 #include <vector>
+#include "cvos_common.h"
 
 // Given a flow image, computes the largest difference in angle at each point,
 // wrt its neighbors.
 // d = flow_angle_distance_mex(uv)
 
 using namespace std;
-int inline linear_index(int r, int c, int k, int rows, int cols);
-int inline linear_index(int r, int c, int rows);
 
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 {
@@ -52,7 +51,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         // get angle:
         id1 = linear_index(y, x, 0, rows, cols);
         id2 = linear_index(y, x, 1, rows, cols);
-        norm = sqrt( img[id1]*img[id1] + img[id2]*img[id2] );
+        norm = sqrt( img[id1]*img[id1] + img[id2]*img[id2] ) + 1e-10f;
         theta_x = img[id1]/norm;
         theta_y = img[id2]/norm;
         d = 0.0;
@@ -72,13 +71,4 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         out[id1] = d;
     }
   }
-}
-
-
-int inline linear_index(int r, int c, int k, int rows, int cols) {
-    return r + c*rows + k*rows*cols;
-}
-
-int inline linear_index(int r, int c, int rows) {
-    return r + c*rows;
 }

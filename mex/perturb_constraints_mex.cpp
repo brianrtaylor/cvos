@@ -6,6 +6,7 @@
 #include <cstring>
 #include <cmath>
 #include <vector>
+#include "cvos_common.h"
 
 using namespace std;
 
@@ -44,8 +45,6 @@ struct memorization_table {
     int cols;
 };
 
-int inline linear_index(int r, int c, int k, int rows, int cols);
-int inline linear_index(int r, int c, int rows);
 double convert_to_log_ratio(double p1, double p2);
 void force_inside(double* pt, int rows, int cols);
 double compute_gmm_weight(double p_occr_fg, double p_occr_bg, double p_occd_fg, double p_occd_bg);
@@ -505,14 +504,6 @@ double inline compute_gmm_weight(double P_occr, double P_occd) {
 void force_inside(double* pt, int rows, int cols) { 
     pt[0] = min(max(0.0 , pt[0]), (double)(cols-1) );
     pt[1] = min(max(0.0 , pt[1]), (double)(rows-1) );
-}
-
-int inline linear_index(int r, int c, int k, int rows, int cols) {
-    return r + c*rows + k*rows*cols;
-}
-
-int inline linear_index(int r, int c, int rows) {
-    return r + c*rows;
 }
 
 double utils_eval_gmm_fast(const double* I, const double* mu, 

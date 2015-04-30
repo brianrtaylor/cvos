@@ -6,12 +6,11 @@
 #include <cstring>
 #include <cmath>
 #include <vector>
-//#include "generic.h"
-#include "gmm.h"
+//#include "generic.h" // vlfeat
+#include "gmm.h" // vlfeat
+#include "cvos_common.h"
 
 using namespace std;
-int inline linear_index(int r, int c, int k, int rows, int cols);
-int inline linear_index(int r, int c, int rows);
 
 #define LOG2PI 1.837877066409345
 
@@ -204,13 +203,4 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     memcpy(fg_pi  + ind , priors, sz );
   }
   vl_gmm_delete(gmm);
-}
-
-
-int inline linear_index(int r, int c, int k, int rows, int cols) {
-  return r + c*rows + k*rows*cols;
-}
-
-int inline linear_index(int r, int c, int rows) {
-  return r + c*rows;
 }

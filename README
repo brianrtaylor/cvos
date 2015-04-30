@@ -1,0 +1,42 @@
+===========================================================================
+1. INSTALLATION
+===========================================================================
+Dependencies:
+    * VLfeat (http://www.vlfeat.org/)
+        
+    * FastEdgeDetection
+        ( http://research.microsoft.com/en-us/downloads/389109f6-b4e8-404c-84bf-239f7cbf4e3d/ )
+        "Structured Forests for Fast Edge Detection", P. Dollár and C. Zitnick, ICCV13
+    
+    * Piotr's Computer Vision MATLAB Toolbox
+        ( http://vision.ucsd.edu/~pdollar/toolbox/doc/index.html )
+    
+    * Accurate fast marching toolbox
+        ( http://www.mathworks.com/matlabcentral/fileexchange/24531-accurate-fast-marching )
+    
+    * Graph Based Image Segmentation
+        ( http://cs.brown.edu/~pff/segment/ )
+        "Efficient Graph-Based Image Segmentation" P. Felzenszwalb, D. Huttenlocher, IJCV04
+        Note that their package is C++ only. Our package provides a MATLAB wrapper.
+
+    * Recursive Bilateral Filtering
+        ( http://www.cs.cityu.edu.hk/~qiyang/publications/eccv-12/ )
+        "Recursive Bilateral Filtering", Q. Yang, ECCV12
+        Their code is a bit restrictive, e.g. in that input cannot have two channels (like flow does).
+        Our version can filter two-channel images (as a special case), and also includes a MATLAB wrapper.
+
+You must run "mex_setup.m" in cdo_aid/ prior to anything
+
+===========================================================================
+3. FINAL WORDS
+===========================================================================
+
+This code was tested on Ubuntu.
+If you use this work in your research, we ask that you cite the following:
+
+Causal Video Object Segmentation from Persistence of Occlusions
+B. Taylor, V. Karasev, and S. Soatto. In CVPR, 2015.
+
+Additionally, if you have any comments about this work, please do not hesitate to contact us.
+
+btay@cs.ucla.edu, karasev00@gmail.com

@@ -7,11 +7,9 @@
 #include <cmath>
 #include <vector>
 #include <cassert>
+#include "cvos_common.h"
 
 using namespace std;
-
-#define MAT2C(x) ((x)-1)
-#define C2MAT(x) ((x)+1)
 
 void print_usage() { 
   mexPrintf("[out_msfm, occ_cc_max] = remove_occb_mask_loop_mex( ...\n");

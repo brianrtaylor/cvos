@@ -6,17 +6,13 @@
 #include <cstring>
 #include <cmath>
 #include <vector>
-
+#include "cvos_common.h"
 // a simple bilateral filter
 //
 // usage img = bilateral_filter_mex(img, sigma_d, sigma_I)
 
 using namespace std;
-int inline linear_index(int r, int c, int k, int rows, int cols);
-int inline linear_index(int r, int c, int rows);
-
-void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
-{
+void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
   if ((nrhs != 3) || (nlhs != 1)) {
     mexPrintf("Incorrect number of input/output arguments.\n");
     mexPrintf("USAGE: out = bilateral_filter_mex(img, sigma_d, sigma_I)\n");    
@@ -117,13 +113,4 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   delete exp_;
   delete values;
   delete out_values;
-}
-
-
-int inline linear_index(int r, int c, int k, int rows, int cols) {
-    return r + c*rows + k*rows*cols;
-}
-
-int inline linear_index(int r, int c, int rows) {
-    return r + c*rows;
 }

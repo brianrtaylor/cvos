@@ -7,6 +7,7 @@
 #include <cmath>
 #include <vector>
 #include <limits> 
+#include "cvos_common.h"
 // USAGE: mag = occweight_edge_crossing(img, constraints)
 //
 //  img - edge image; "non-edges" are 'high' and "edges" are LOW (~0)
@@ -14,12 +15,7 @@
 //  for each constraint, this function finds the smallest value of 'img'
 //  along the line connecting two points.
 //
-
 using namespace std;
-int inline linear_index(int r, int c, int k, int rows, int cols);
-int inline linear_index(int r, int c, int rows);
-int inline getrow(int i, int rows);
-int inline getcol(int i, int rows);
 
 vector<int> bresenham(int x0, int y0, int x1, int y1, int rows);
 
@@ -74,23 +70,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     }
     //mexPrintf("(%d,%d) (%d,%d) %d - %f\n", c1, r1, c2, r2, idx.size() , out[i] );    
   }
-}
-
-
-int inline linear_index(int r, int c, int k, int rows, int cols) {
-    return r + c*rows + k*rows*cols;
-}
-
-int inline linear_index(int r, int c, int rows) {
-    return r + c*rows;
-}
-
-int inline getrow(int i, int rows) { 
-    return i - (i / rows)*rows;
-}
-
-int inline getcol(int i, int rows) { 
-    return (i / rows);
 }
 
 // this is from rosetta-code

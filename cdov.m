@@ -95,8 +95,6 @@ end
 outpath = [outpath, '/', seq];
 
 if ~exist(outpath,'dir'), mkdir(outpath); end;
-% flag = 'l1';
-% if USE_ELL_INFINITY, flag = 'linf'; end
 
 % vasiliy
 out_fname = sprintf(['%s/%s_results_temporal_fg' ...
@@ -252,9 +250,6 @@ problem.max_iterations = 8000;
 problem.verbosity = 5000;
 problem.fx_tolerance = 0;
 problem.dx_tolerance = 1e-9;
-problem.USE_ISOTROPIC_TV = 0;
-problem.USE_ELL_INFINITY = 0;
-problem.USE_BOTH_PENALTIES = 0;
 problem.SOLVE_PIXELWISE = 1;
 problem.layer_upper_bound = 3;
 problem.imsize = imsize;

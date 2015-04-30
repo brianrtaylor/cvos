@@ -7,10 +7,9 @@
 #include <cmath>
 #include <vector>
 #include <cassert>
+#include "cvos_common.h"
 
 using namespace std;
-int inline linear_index(int r, int c, int k, int rows, int cols);
-int inline linear_index(int r, int c, int rows);
 double normpdf(double* I, double* mu, double* cov, int dim);
 double utils_eval_gmm(double* I, double* mu, double* cov, double* pi, int dim, int K);
 double convert_to_log_ratio(double p1, double p2);
@@ -173,14 +172,6 @@ void force_inside(double* pt, int rows, int cols) {
     pt[0] = min(max(0.0 , pt[0]), (double)(cols-1) );
     pt[1] = min(max(0.0 , pt[1]), (double)(rows-1) );
 } 
-
-int inline linear_index(int r, int c, int k, int rows, int cols) {
-    return r + c*rows + k*rows*cols;
-}
-
-int inline linear_index(int r, int c, int rows) {
-    return r + c*rows;
-}
 
 // double utils_eval_gmm_fast(double* I, double* mu, double* cov, double* pi, int dim, int K) {
 //     double p = 0;

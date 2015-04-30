@@ -224,11 +224,6 @@ void print_usage() {
     mexPrintf("nedges - number of edges in the problem\n");
     mexPrintf("imsize - (rows, cols)\n");
     mexPrintf("tau1 - weight on the L1 penalty (NNODES x 1)\n");
-    mexPrintf("tau2 - weight on the Linf penalty (by default, unused)\n");
-    mexPrintf("USE_ELL_INFINITY   - if '0', L1 norm is used. \n");
-    mexPrintf("                   - if '1', Linf norm is used.\n");
-    mexPrintf("USE_BOTH_PENALTIES - if '1', L1+Linf is used. \n");
-    mexPrintf("                   - if '0', L1 or Linf is used (depending on other settings).\n");
     mexPrintf("layer_upper_bound - if set to 0, upper bound not used\n");
     mexPrintf("USE_TEMPORAL_PENALTY - 0/1 whether 'foreground prior is used.\n");
     mexPrintf("kappa - weight of the foreground prior. (NNODES x 1) \n");

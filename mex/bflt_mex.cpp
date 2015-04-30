@@ -6,17 +6,15 @@
 #include <cstring>
 #include <cmath>
 #include <vector>
+#include "cvos_common.h"
 
 using namespace std;
 // Aout = bflt_mex(A, B, mask_change_, mask_ignore_, w_, sigma_d, sigma_r)
 
-int inline linear_index(int r, int c, int k, int rows, int cols);
-int inline linear_index(int r, int c, int rows);
 int determine_region_size(double* A, int r, int c, int w_, 
         int rows, int cols, double MAXG, double MINW, double opts_w);
 
-void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
-{
+void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
   // ----------------------------------------------------------------------    
   double MAXG = 100.0;
   double MINW = 20.0;
@@ -165,13 +163,4 @@ int determine_region_size(double* A, int r, int c, int w_,
     int maxflow = ceil(max(uvx, uvy));    
     int w = (int)min(MAXG, max(MINW, opts_w*maxflow));
     return w;
-}
-
-
-int inline linear_index(int r, int c, int k, int rows, int cols) {
-    return r + c*rows + k*rows*cols;
-}
-
-int inline linear_index(int r, int c, int rows) {
-    return r + c*rows;
 }

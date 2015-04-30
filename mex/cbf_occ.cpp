@@ -22,10 +22,8 @@
 #include <cstring>
 #include <cmath>
 #include <vector>
-
+#include "cvos_common.h"
 using namespace std;
-int inline linear_index(int r, int c, int k, int rows, int cols);
-int inline linear_index(int r, int c, int rows);
 
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 {
@@ -164,12 +162,4 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   // fin.
   delete exp_;
   mexPrintf("done.\n");
-}
-
-int inline linear_index(int r, int c, int k, int rows, int cols) {
-  return r + c*rows + k*rows*cols;
-}
-
-int inline linear_index(int r, int c, int rows) {
-  return r + c*rows;
 }

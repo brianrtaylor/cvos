@@ -13,11 +13,9 @@
 #include <cstring>
 #include <cmath>
 #include <vector>
+#include "cvos_common.h"
 
 using namespace std;
-
-int inline linear_index(int r, int c, int k, int rows, int cols);
-int inline linear_index(int r, int c, int rows);
 
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 { 
@@ -62,31 +60,3 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         }
     }
 }
-
-int inline linear_index(int r, int c, int k, int rows, int cols) {
-  return r + c*rows + k*rows*cols;
-}
-
-int inline linear_index(int r, int c, int rows) {
-  return r + c*rows;
-}
-
-
-// function region = occ_expand(occ, uv)
-// [M, N] = size(occ);
-// mag_nuv = sqrt(sum(uv .^ 2, 3));
-// region = occ;
-// for y = 1:M;
-//   for x = 1:N;
-//     r = occ(y, x);
-//     Q = max(1, floor(mag_nuv(y, x) * r));
-// %     Q = clip(Q, 2, 50);
-//     Q = min(max(Q, 2), 50);
-//     ymin = max(1, y-Q);
-//     xmin = max(1, x-Q);
-//     ymax = min(M, y+Q);
-//     xmax = min(N, x+Q);
-//     region(y, x) = max(vec(occ(ymin:ymax, xmin:xmax)));
-//   end
-// end
-// end
