@@ -14,9 +14,6 @@ using namespace std;
 
 #define LOG2PI 1.837877066409345
 
-#define MAT2C(x) ((x)-1)
-#define C2MAT(x) ((x)+1)
-
 // [mu_fg, cov_fg, pi_fg, mu_bg, cov_bg, pi_bg] = 
 //  learn_bbox_gmm_mex( I0, layers, weights, box_centers, box_radii, box_masks, 
 //    NUM_GMM_CLUSTERS, NUM_GMM_REPETITIONS, NUM_GMM_ITERATIONS)
