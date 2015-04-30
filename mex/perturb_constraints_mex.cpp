@@ -7,6 +7,7 @@
 #include <cmath>
 #include <vector>
 #include "cvos_common.h"
+#include "gmm_utils.h"
 
 using namespace std;
 
@@ -45,21 +46,26 @@ struct memorization_table {
     int cols;
 };
 
-double convert_to_log_ratio(double p1, double p2);
+struct perturb_params {
+  float EDGE_DISTANCE_COST;
+  float TRANSLATION_COST;
+  int MAX_SHIFT;
+  int NUM_SHIFT;
+  int NUM_ROTATION;
+  float MAX_ROTATION;
+  float ROTATION_COST;
+  float MAX_STRETCH;
+  int NUM_STRETCH;
+  float STRETCH_COST;
+  float INVALID_COST;    
+};
+
 void force_inside(double* pt, int rows, int cols);
-double compute_gmm_weight(double p_occr_fg, double p_occr_bg, double p_occd_fg, double p_occd_bg);
-double inline compute_gmm_weight(double P_occr, double P_occd);
-double utils_eval_gmm_fast(const double* I, const double* mu, 
-        const double* cov, const double* invsqrtcov, 
-        const double* logsqrtcov, const double* pi, int dim, int K);
 void rotate_and_scale( double* out, double* in, double* center, double theta, double scale );
 
 void optimal_constraint_deformation_A2(double* I0, double* edge_image, char* invalid,
-        constraint_data* data,
-        vector<int>& shifts_, vector<double>& rotations_, 
-        int MAX_STRETCH, int NUM_STRETCH, double TRANSLATION_COST, 
-        double ROTATION_COST, double STRETCH_COST, double EDGE_DISTANCE_COST,
-        double INVALID_COST, int rows, int cols);
+        constraint_data* data, vector<int>& shifts_, vector<double>& rotations_, 
+        const perturb_params* params, int rows, int cols);
 
 memorization_table init_memorization_table(int rows, int cols, int num_pts);
 void inline put_in_memorization_table(memorization_table& m, double log, double prob, int r, int c, int pt);
@@ -71,18 +77,11 @@ void adjust_num_stretch(int* NUM_STRETCH, int* MAX_STRETCH,
                             double separation, double maxallowedseparation);
 double get_min_nonzero_separation(double sep, int NUM_STRETCH, int MAX_STRETCH);
 
-#define LOG2PI 1.837877066409345
+// USAGE:    
+// [pts_occd_out, pts_occr_out, gmm_weights] = perturb_constraints_mex(...
+//               I0, d_edge, pts_occd, pts_occr, pts_max_separation, ...
+//               constraint_groups, local_gmm_fg, local_gmm_bg, params );
 
-#define MAT2C(x) ((x)-1)
-#define C2MAT(x) ((x)+1)
-
-// [pts_occd_out, pts_occr_out, gmm_weights] = perturb_constraints_mex_faster(...
-//             I0, d_edge, pts_occd, pts_occr, max_separation, constraint_groups, ...
-//             local_gmm_fg, local_gmm_bg, ...
-//             EDGE_DISTANCE_COST, TRANSLATION_COST, MAX_SHIFT, ...
-//             NUM_ROTATION, MAX_ROTATION, ROTATION_COST, ...
-//             MAX_STRETCH, STRETCH_COST, INVALID_COST ); 
-    
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
   // ----------------------------------------------------------------------    
   double* I0   = (double*)mxGetPr( prhs[0] );
@@ -124,18 +123,43 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     mexPrintf("check that this behavior is sane.\n");    
   }
   
-  double EDGE_DISTANCE_COST = (double)mxGetScalar( prhs[8] );
-  double TRANSLATION_COST = (double)mxGetScalar( prhs[9] );
-  int MAX_SHIFT = (int)mxGetScalar( prhs[10] );
-  int NUM_ROTATION = (int)mxGetScalar( prhs[11] );
-  double MAX_ROTATION = (double)mxGetScalar( prhs[12] );
-  double ROTATION_COST = (double)mxGetScalar( prhs[13] );    
-  double MAX_STRETCH = (double)mxGetScalar( prhs[14] );
-  double STRETCH_COST = (double)mxGetScalar( prhs[15] );
-  double INVALID_COST = (double)mxGetScalar( prhs[16] );
   
-  int NUM_STRETCH = 2*MAX_STRETCH + 1;
-  int NUM_SHIFT = MAX_SHIFT*2+1;
+  if (nrhs < 9) { mexPrintf("number of arguments is wrong.\n"); return; }
+    
+  const mxArray* params_struct = prhs[8];
+  perturb_params params;
+  params.EDGE_DISTANCE_COST = (float)mxGetScalar(
+                        mxGetField(params_struct, 0, "EDGE_DISTANCE_COST"));
+  params.TRANSLATION_COST = (float)mxGetScalar(
+                        mxGetField(params_struct, 0, "TRANSLATION_COST"));
+  params.MAX_SHIFT = (int)mxGetScalar( 
+                        mxGetField(params_struct, 0, "MAX_SHIFT"));
+  params.NUM_ROTATION = (int)mxGetScalar( 
+                        mxGetField(params_struct, 0, "NUM_ROTATION"));
+  params.MAX_ROTATION = (float)mxGetScalar( 
+                        mxGetField(params_struct, 0, "MAX_ROTATION") );
+  params.ROTATION_COST = (float)mxGetScalar( 
+                        mxGetField(params_struct, 0, "ROTATION_COST") );    
+  params.MAX_STRETCH = (float)mxGetScalar( 
+                        mxGetField(params_struct, 0, "MAX_STRETCH") );
+  params.STRETCH_COST = (float)mxGetScalar( 
+                        mxGetField(params_struct, 0, "STRETCH_COST") );
+  params.INVALID_COST = (float)mxGetScalar( 
+                        mxGetField(params_struct, 0, "INVALID_COST") );
+  params.NUM_STRETCH = 2*params.MAX_STRETCH + 1;
+  params.NUM_SHIFT = params.MAX_SHIFT*2+1;
+
+  mexPrintf("edge-distance-cost: %f\n", params.EDGE_DISTANCE_COST);
+  mexPrintf("translation-cost: %f\n",   params.TRANSLATION_COST);
+  mexPrintf("max-shift: %d\n",          params.MAX_SHIFT);
+  mexPrintf("num-shift: %d\n",          params.NUM_SHIFT);
+  mexPrintf("num-rotation: %d\n",       params.NUM_ROTATION);
+  mexPrintf("max-rotation: %f\n",       params.MAX_ROTATION);
+  mexPrintf("rotation-cost: %f\n",      params.ROTATION_COST);
+  mexPrintf("max-stretch: %f\n",        params.MAX_STRETCH);
+  mexPrintf("num-stretch: %d\n",        params.NUM_STRETCH);
+  mexPrintf("stretch-cost: %f\n",       params.STRETCH_COST);
+  mexPrintf("invalid-cost: %f\n",       params.INVALID_COST);
   
   // --------------------------------------------------------------------//
   sz = (mwSize*)mxGetDimensions( prhs[0] );
@@ -152,13 +176,14 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
   double* pts_occr_out = (double*)mxGetPr(plhs[1]); 
   double* gmm_weights = (double*)mxGetPr(plhs[2]); 
    
-  vector<int> shifts_ = vector<int>(NUM_SHIFT);
-  for (int i = 0; i < NUM_SHIFT; ++i) { shifts_[i] = -MAX_SHIFT + i; }
-  vector<double> rotations_ = vector<double>(NUM_ROTATION);
-  for (int i = 0; i < NUM_ROTATION; ++i) {
-      rotations_[i] = -MAX_ROTATION + i*(2*MAX_ROTATION/double(NUM_ROTATION-1));
+  vector<int> shifts_ = vector<int>(params.NUM_SHIFT);
+  for (int i = 0; i < params.NUM_SHIFT; ++i) { shifts_[i] = -params.MAX_SHIFT + i; }
+  vector<double> rotations_ = vector<double>(params.NUM_ROTATION);
+  for (int i = 0; i < params.NUM_ROTATION; ++i) {
+      rotations_[i] = -params.MAX_ROTATION 
+                + i*(2*params.MAX_ROTATION/double(params.NUM_ROTATION-1));
   }
-  if (NUM_ROTATION==1) { rotations_[0] = 0.0; }
+  if (params.NUM_ROTATION==1) { rotations_[0] = 0.0; }
    
   // initialize 'invalid' mask
   char* invalid = new char[rows*cols];
@@ -229,10 +254,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     
     // actually perform the optimization over deformation
     optimal_constraint_deformation_A2(I0, edge_image, invalid, &data,
-                shifts_, rotations_, MAX_STRETCH, NUM_STRETCH, 
-                TRANSLATION_COST, ROTATION_COST, STRETCH_COST, 
-                EDGE_DISTANCE_COST, INVALID_COST, rows, cols);
-
+                shifts_, rotations_, &params, rows, cols);
+    
     // put the points back...
     for (int i = 0; i < num_pts; ++i) {   
       int q = idx[i];
@@ -248,13 +271,10 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
   //-----------------------------------------------------------------------
 }
 
-
 void optimal_constraint_deformation_A2(double* I0, double* edge_image,
         char* invalid, constraint_data* data,
         vector<int>& shifts_, vector<double>& rotations_, 
-        int MAX_STRETCH, int NUM_STRETCH, double TRANSLATION_COST, 
-        double ROTATION_COST, double STRETCH_COST, double EDGE_DISTANCE_COST, 
-        double INVALID_COST, int rows, int cols) {
+        const perturb_params* params, int rows, int cols) {
 
   // 
   int num_pts = data->num_pts;
@@ -330,7 +350,9 @@ void optimal_constraint_deformation_A2(double* I0, double* edge_image,
       // ------------------------------------------------------------------    
       // this block ensures that it is possible to evaluate stretch
       // which is smaller than max-allowed-separation.
-      // ------------------------------------------------------------------    
+      // ------------------------------------------------------------------
+      int NUM_STRETCH = params->NUM_STRETCH;
+      int MAX_STRETCH = params->MAX_STRETCH;
       adjust_num_stretch(&NUM_STRETCH, &MAX_STRETCH, 
                             separation, data->separation[pt]);                      
       // ------------------------------------------------------------------
@@ -374,17 +396,15 @@ void optimal_constraint_deformation_A2(double* I0, double* edge_image,
                     
                     double invalid_cost = 0;
                     if ((invalid[ lin_idx1 ]==1) || (invalid[ lin_idx2 ]==1)) {
-                        invalid_cost = INVALID_COST;
+                        invalid_cost = params->INVALID_COST;
                     }
 
-                    //for (int u = 0; u < 3; ++u) { 
                     I_occd[0] = I0[ linear_index(y1_, x1_, 0, rows, cols) ];
                     I_occr[0] = I0[ linear_index(y2_, x2_, 0, rows, cols) ];         
                     I_occd[1] = I0[ linear_index(y1_, x1_, 1, rows, cols) ];
                     I_occr[1] = I0[ linear_index(y2_, x2_, 1, rows, cols) ];         
                     I_occd[2] = I0[ linear_index(y1_, x1_, 2, rows, cols) ];
                     I_occr[2] = I0[ linear_index(y2_, x2_, 2, rows, cols) ];         
-                    //}
 
                     memtable_idx = is_in_memorization_table(memtable_occd, y1_, x1_, 0); // is pt=0 ?
                     if (memtable_idx>0) {
@@ -433,12 +453,12 @@ void optimal_constraint_deformation_A2(double* I0, double* edge_image,
 
                     double dist = shifts_[jj]*shifts_[jj] + shifts_[ii]*shifts_[ii];
                     double deformation_cost = 
-                                 TRANSLATION_COST*dist + 
-                                 ROTATION_COST*abs(theta) + 
-                                 STRETCH_COST*abs(stretch);
+                                 params->TRANSLATION_COST*dist + 
+                                 params->ROTATION_COST*abs(theta) + 
+                                 params->STRETCH_COST*abs(stretch);
 
                     double energy = ( (p_occr+p_occd) - deformation_cost 
-                                 - invalid_cost - EDGE_DISTANCE_COST*(d1+d2) );
+                                 - invalid_cost - params->EDGE_DISTANCE_COST*(d1+d2) );
 
                     // ---------------------------------------------------
                     // store best transformation..
@@ -468,10 +488,6 @@ void optimal_constraint_deformation_A2(double* I0, double* edge_image,
     data->occr_pts[2*pt+0] = floor( temp[0]+best_xform.T[0] );
     data->occr_pts[2*pt+1] = floor( temp[1]+best_xform.T[1] );
     
-    //mexPrintf("%f %f %f %f\n", 
-    //        data->occd_pts[2*pt+0], data->occd_pts[2*pt+1], 
-    //        data->occr_pts[2*pt+0], data->occr_pts[2*pt+1] );
-            
     force_inside(&data->occd_pts[2*pt], rows, cols);
     force_inside(&data->occr_pts[2*pt], rows, cols);    
     data->weights[pt] = best_weight;
@@ -488,52 +504,11 @@ void optimal_constraint_deformation_A2(double* I0, double* edge_image,
   delete bg_logsqrtcov; 
 }
 
-double compute_gmm_weight(double p_occr_fg, double p_occr_bg, double p_occd_fg, double p_occd_bg) { 
-    double P_occr = p_occr_fg / (p_occr_fg + p_occr_bg);
-    double P_occd = p_occd_bg / (p_occd_fg + p_occd_bg);
-    double p = (P_occr+P_occd)/2.0;    
-    return 2.0*max(0.0, p-0.5);
-    //return p;
-}
-
-double inline compute_gmm_weight(double P_occr, double P_occd) { 
-    double p = (P_occr+P_occd)/2.0;
-    return 2.0*max(0.0, p-0.5);    
-}
-
 void force_inside(double* pt, int rows, int cols) { 
     pt[0] = min(max(0.0 , pt[0]), (double)(cols-1) );
     pt[1] = min(max(0.0 , pt[1]), (double)(rows-1) );
 }
 
-double utils_eval_gmm_fast(const double* I, const double* mu, 
-        const double* cov, const double* invsqrtcov, 
-        const double* logsqrtcov, const double* pi, int dim, int K) {
-    double p = 0;
-    double f;
-    const double *MU, *COV, *INVSQRTCOV;
-    for (int k = 0; k < K; ++k) {
-        MU = mu + dim*k;
-        COV = cov + dim*k;     
-        INVSQRTCOV = invsqrtcov + dim*k;
-        
-        double logp = -dim*LOG2PI - logsqrtcov[k];
-
-        for (int i = 0; i < dim; ++i) { 
-            f = (I[i]-MU[i])*INVSQRTCOV[i];
-            logp -= 0.5*f*f;
-        }
-        p += pi[k]*exp(logp);
-    }
-    return p;
-}
-
-
-double convert_to_log_ratio(double p1, double p2) {
-    p1 = max(min(300.0, log(p1)), -300.0);
-    p2 = max(min(300.0, log(p2)), -300.0);
-    return (p1-p2);
-}
 
 void rotate_and_scale( double* out, double* in, double* center, double theta, double scale ) {
     out[0] = (cos(+theta)*in[0] + sin(+theta)*in[1])*scale + center[0];

@@ -17,12 +17,12 @@ end
 cd('..');
 
 % 2. some setup
-% mex_clean
+mex_clean
 mex_setup
 
 % 3. run cvos_run
 % paths to results are editable in cdo_aid/dataPaths.m
-cvos_run({'cars5'}, 'full', 'moseg');
+cvos_run({'cars5'}, 'full');
 
 % 4. see results in "./results" folder
 % TODO: visualize results here

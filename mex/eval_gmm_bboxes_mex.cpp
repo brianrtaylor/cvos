@@ -8,21 +8,9 @@
 #include <vector>
 #include <cassert>
 #include "cvos_common.h"
+#include "gmm_utils.cpp"
 
 using namespace std;
-double normpdf(double* I, double* mu, double* cov, int dim);
-double utils_eval_gmm(double* I, double* mu, double* cov, double* pi, int dim, int K);
-double convert_to_log_ratio(double p1, double p2);
-void force_inside(double* pt, int rows, int cols);
-double compute_gmm_weight(double p_occr_fg, double p_occr_bg, double p_occd_fg, double p_occd_bg);
-double utils_eval_gmm_fast(double* I, double* mu, double* cov, double* pi, int dim, int K);
-
-// log(2 * pi)
-#define LOG2PI 1.837877066409345
-#define PI 3.141592653589793
-
-#define MAT2C(x) ((x)-1)
-#define C2MAT(x) ((x)+1)
 
 //------------------------------------------------------------------------
 // [box_fg, box_bg, box_conf] = eval_bboxes_gmm_mex(im2double(I1), bboxes)
@@ -145,9 +133,10 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
         double p_fg = p_pxl_fg / (p_pxl_fg + p_pxl_bg);
         double p_bg = p_pxl_bg / (p_pxl_fg + p_pxl_bg);
 
-        // double p_fg = convert_to_log_ratio(p_pxl_fg, p_pxl_bg);
-        // double p_bg = convert_to_log_ratio(p_pxl_bg, p_pxl_fg);
-
+        if (mxIsNaN(p_fg) || mxIsNaN(p_bg)) {
+            mexPrintf("xyi: %f %f\n", p_pxl_fg, p_pxl_bg);
+        }
+        
         // write out the result
         int brr = rr - cy + r;
         int bcc = cc - cx + r;
@@ -157,91 +146,4 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
       }
     }
   }
-}
-
-//------------------------------------------------------------
-// Helper functions
-//------------------------------------------------------------
-double compute_gmm_weight(double p_occr_fg, double p_occr_bg, double p_occd_fg, double p_occd_bg) { 
-    double P_occr = p_occr_fg / (p_occr_fg + p_occr_bg);
-    double P_occd = p_occd_bg / (p_occd_fg + p_occd_bg);
-    return (P_occr+P_occd)/2.0;    
-}
-
-void force_inside(double* pt, int rows, int cols) { 
-    pt[0] = min(max(0.0 , pt[0]), (double)(cols-1) );
-    pt[1] = min(max(0.0 , pt[1]), (double)(rows-1) );
-} 
-
-// double utils_eval_gmm_fast(double* I, double* mu, double* cov, double* pi, int dim, int K) {
-//     double p = 0;
-//     double sqrtcov, f;
-//     double *MU, *COV;
-//     for (int k = 0; k < K; ++k) {
-//         MU = mu + dim*k;
-//         COV = cov + dim*k;     
-//         // double logp = -dim*LOG2PI; // think this works if  it was dim/2
-//         double logp = -log( pow(2 * PI, (0.5 * (double) dim))); // more correct?
-//         for (int i = 0; i < dim; ++i) { 
-//             sqrtcov = sqrt(COV[i]);
-//             f = (I[i]-MU[i])/sqrtcov;
-//             logp += (-0.5*f*f - log(sqrtcov));
-//         }
-//         p += pi[k]*exp(logp);
-//     }
-//     return p;
-// }
-
-double utils_eval_gmm_fast(double* I, double* mu, double* cov, double* pi, int dim, int K) {
-  // double p = 0.0f;
-  double p2 = 0.0f;
-  // double sqrtcov, f;
-  double *MU, *COV;
-  for (int k = 0; k < K; ++k) {
-    MU = mu + dim*k;
-    COV = cov + dim*k;     
-    double logp = -dim*LOG2PI; // think this works if  it was dim/2
-    // double logp = -log( pow(2 * PI, (0.5 * (double) dim))); // more correct?
-    double kp = 1.0;
-    for (int i = 0; i < dim; ++i) { 
-      kp *= (1.0 / sqrt(COV[i] * 2 * PI));
-      kp *= exp((-0.5 * (I[i] - MU[i])*(I[i] - MU[i])) / COV[i]);
-
-      // sqrtcov = sqrt(COV[i]);
-      // f = (I[i]-MU[i])/sqrtcov;
-      // logp += (-0.5*f*f - log(sqrtcov));
-    }
-    // p += pi[k]*exp(logp);
-    p2 += pi[k]*kp;
-  }
-  // assert(abs(p - p2) < 1e-8);
-  return p2;
-}
-
-
-double utils_eval_gmm(double* I, double* mu, double* cov, double* pi, int dim, int K) {
-    double p = 0;
-    for (int k = 0; k < K; ++k) { 
-        double np = normpdf(I, mu + dim*k, cov + dim*k, dim);
-        p += pi[k]*np;
-    }
-    return p;
-}
-
-double normpdf(double* I, double* mu, double* cov, int dim) {
-    double logp = -dim*LOG2PI; // think this works if  it was dim/2
-    // double logp = -log( pow(2 * PI, (0.5 * (double) dim)));
-    double sqrtcov, f;
-    for (int i = 0; i < dim; ++i) { 
-        sqrtcov = sqrt(cov[i]);
-        f = (I[i]-mu[i])/sqrtcov;
-        logp += (-0.5*f*f - log(sqrtcov));
-    }
-    return exp(logp);
-}
-
-double convert_to_log_ratio(double p1, double p2) {
-    p1 = max(min(300.0, log(p1)), -300.0);
-    p2 = max(min(300.0, log(p2)), -300.0);
-    return (p1-p2);
 }
