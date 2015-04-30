@@ -1,4 +1,5 @@
 % TODO: use better example than cars5 because we lose the right car
+% TODO: replace cvos_lite_* with some edits and calls to cvos straight out
 % TODO: make tao_visual save less stuff
 % in frame 1
 
