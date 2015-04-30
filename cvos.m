@@ -1,11 +1,11 @@
 %----------------------------------------------------------------------------%
-% cdov(DATA, PKG)
+% cvos(DATA, PKG)
 %
-% causal detachable objects
+% causal video object segmentation from persistence of occlusions
 %
 % @param: DATA : case number or name for sequence to run
 %----------------------------------------------------------------------------%
-function [out, etc] = cdov(DATA, PKG, sup)
+function [out, etc] = cvos(DATA, PKG, sup)
 %----------------------------------------------------------------------------%
 % some startup + parameters
 %----------------------------------------------------------------------------%
@@ -18,32 +18,12 @@ BEGIN = 1;
 %----------------------------------------------------------------------------%
 % DATA PATH
 %----------------------------------------------------------------------------%
-if isnumeric(DATA); % btay datapath
-  paramsIn = struct();
-  paramsIn.expName = 'combine';
-  [p, params] = ttaobdData(DATA, paramsIn);
-  p.expName = paramsIn.expName;
-  flowtype = 'ayvaci';
-  img_path = p.dpath;
-  flow_path = p.uvpath;
-  seq = p.seq;
+[seq, flow_path, img_path, ~, extension, flowtype] = dataPaths(DATA);
+files = dir([img_path '/*.' extension]);
+flow_files = dir([flow_path '/*.mat']);
 
-  % how long to go for
-  imgNameSearchStr = regexprep(p.imgNameStr, '\%\d*d', '*');
-  files = dir(fullfile(img_path, sprintf(imgNameSearchStr, seq)));
-  if isempty(files); files = dir([img_path '/*.' p.ext]); end
-  uvNameSearchStr  = regexprep(p.uvNameStr,  '\%\d*d', '*');
-  flow_files = dir(fullfile(flow_path, sprintf(uvNameSearchStr, seq)));
-  if isempty(flow_files); flow_files = dir([flow_path '/*.mat']); end
-  
-else % vasiliy datapath
-  [seq, flow_path, img_path, ~, extension, flowtype] = dataPaths(DATA);
-  files = dir([img_path '/*.' extension]);
-  flow_files = dir([flow_path '/*.mat']);
-end
+[files, ~] = purge_files(files, 'rsz'); % checks for rsz files
 
-% checks for rsz files
-[files, ~] = purge_files(files, 'rsz');
 T = length(files);
 I1 = imread(fullfile(img_path, files(BEGIN).name));
 I2 = imread(fullfile(img_path, files(BEGIN+1).name));
@@ -55,8 +35,6 @@ imsize = [rows, cols];
 uvsize = [rows, cols, 2];
 i1 = im2double(rgb2gray(I1));
 i2 = im2double(rgb2gray(I2));
-
-% HAVE: rows, cols, channels, T, files, imsize, img_path
 
 %----------------------------------------------------------------------------%
 % algorithm settings
@@ -103,7 +81,7 @@ out_fname = sprintf(['%s/%s_results_temporal_fg' ...
   params.TAU1, params.TAU2, params.PAIR, params.LAMBDA);
 
 % btay
-out_fname2 = sprintf(['%s/%s_cdovresults_temporal_fg' ...
+out_fname2 = sprintf(['%s/%s_cvosresults_temporal_fg' ...
   '=%4.3f_%f_%f_%f_%f.mat'], outpath, seq, ...
   params.PROB_FG, params.TAU1, params.TAU2, params.PAIR, params.LAMBDA);
 out_working_fname2 = [out_fname2, '.running'];
@@ -138,7 +116,7 @@ end
 
 %-----------------------------------------------------------------------
 %-----------------------------------------------------------------------
-% Work for this execution of cdov
+% Work for this execution of cvos
 %-----------------------------------------------------------------------
 %-----------------------------------------------------------------------
 
@@ -952,7 +930,7 @@ for k = BEGIN:FINISH;
   %------------------------------------------------------------------------
   a = tic();
   
-  tao_visual(layers, ...
+  cvos_visual(layers, ...
     constraints_causal_b, constraints_causal_f, constraint_weights_old_b, ...
     constraint_weights_old_f, constraints_now_b, constraints_now_f, ...
     constraint_weights_now_nodiv_b, constraint_weights_now_nodiv_f, ...
@@ -1038,11 +1016,11 @@ for k = BEGIN:FINISH;
       opts_boxes, nameStr, object_mean_uvf_map, FINISH);
 
     if (k == 2); % first frame
-      cdov_lite_start(params, ADD, k - 1);
+      cvos_lite_start(params, ADD, k - 1);
     elseif ~params.DO_FORBACKCAUSAL; % end frame 
-      cdov_lite_finish(params, ADD, k + 1);
+      cvos_lite_finish(params, ADD, k + 1);
     elseif params.DO_FORBACKCAUSAL; % end frame
-      cdov_lite_start(params, ADD, k + 1);
+      cvos_lite_start(params, ADD, k + 1);
     end
   end
 end

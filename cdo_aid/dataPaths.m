@@ -1,18 +1,17 @@
-% this is in the same style as dataPaths file in activeselection
-% (karasevRS14)
 function [sequence_name, flow_path, img_path, truth_path, extension, flowtype] = dataPaths(seq)
-% BASE_PATH = '/media/vasiliy/superdrive/CVPR/data/';
-% BASE_PATH = '/media/vasiliy/superdrive/';
-[~, hostname] = system('hostname');
-hostname = hostname(hostname~=10); % remove whitespace
-if strcmpi(hostname,'ra')==1 % vasiliy's laptop
-%     BASE_PATH = '/home/vasiliy/data/';
-    BASE_PATH = '/media/vasiliy/superdrive/CVPR/data/';  
-    BASE_PATH = '/media/vasiliy/athena/CVPR15/data/';
-    BASE_PATH = '/home/vasiliy/data/';
-else
-    BASE_PATH = '/plot/vasiliy/CVPR15/data/';
-end
+
+% TODO: only keep this for testing in the vision lab. Afterwards, remove
+%%% [~, hostname] = system('hostname');
+%%% hostname = hostname(hostname~=10); % remove whitespace
+%%% if strcmpi(hostname,'ra')==1 % vasiliy's laptop
+%%%   BASE_PATH = '/media/vasiliy/superdrive/CVPR/data/';  
+%%%   BASE_PATH = '/media/vasiliy/athena/CVPR15/data/';
+%%%   BASE_PATH = '/home/vasiliy/data/';
+%%% else
+%%%   BASE_PATH = '/plot/vasiliy/CVPR15/data/';
+%%% end
+
+BASE_PATH = 'example_demo/';
 
 sequence_name = seq;
 flow_path = '';
@@ -78,7 +77,7 @@ k=k+1;
 data(k).sequence_name = 'cars5';
 data(k).flow_path = [BASE_PATH, '/moseg/', data(k).sequence_name, '/flow/'];
 data(k).img_path = [BASE_PATH,'/moseg/', data(k).sequence_name, '/'];
-data(k).truth_path = [BASE_PATH, '/moseg/', data(k).sequence_name, '/GT/GT_new.mat']; % not sure.
+data(k).truth_path = [BASE_PATH, '/moseg/', data(k).sequence_name, '/GT/GT.mat']; % not sure.
 data(k).extension = 'png';
 data(k).flowtype = 'sun';
 k=k+1;

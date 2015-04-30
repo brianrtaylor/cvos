@@ -1,5 +1,5 @@
 %-------------------------------------------------------------------------
-% runs the cvos framework on a specific sequence as specified by ttaobdData
+% runs the cvos framework on a specific sequence as specified by dataPaths
 %
 % @param: model: appropriate model choices follow
 % * fxf  : frame by frame or basic (same as ayvaci)
@@ -9,12 +9,12 @@
 %   aggregated cues + implementation details (e.g. constraint perturbation, 
 %   local shape classifiers) and the like
 %-------------------------------------------------------------------------
-function weekCR_run(seqs, model, dataset)
+function cvos_run(seqs, model, dataset)
 setup;
 if ~exist('model', 'var'); model = 'full'; end;
 
-plotbase = '~/';
-outpath = '~/results/';
+plotbase = './';
+outpath = './results/';
 %-------------------------------------------------------------------------
 % parameters
 %-------------------------------------------------------------------------
@@ -29,7 +29,7 @@ PKG.OCCPROB = 0.05;
 PKG.OCCPROBLAYERTHRESH = 0.10;
 PKG.MINCONSTRAINTDIST = -1.0;
 PKG.CONS_PERTURB.MAXCONSTRAINTDIST = 10.0;
-PKG.versiontype = sprintf('cdov_ay_71_%s', model);
+PKG.versiontype = sprintf('cvos_ay_71_%s', model);
 PKG.CHECKPOINT = 10;
 PKG.DO_CROSSBILATERALFILTERFLOW = true;
 PKG.DO_CONSTRAINT_DIVWEIGHT = true;
@@ -74,28 +74,28 @@ PKG.DO_FORBACKCAUSAL = false;
 if strcmp(model, 'fullboxfig');
   PKG.TEST = true;
   PKG.DO_FORBACKCAUSAL = false;
-  outpath = '/plot/btay/projects/detachable/cdov_cvpr15/wcr-cdov-r0.6-fullboxfig';
+  outpath = fullfile(plotbase, 'cvos-r1.0-fullboxfig');
 elseif strcmp(model, 'fullbg');
   PKG.PROB_BG = 0.001;
-  outpath = '/plot/btay/projects/detachable/cdov/week20-cdov-r0.6-fullbg';
+  outpath = fullfile(plotbase, 'cvos-r1.0-fullbg');
 elseif strcmp(model, 'fullnobox'); % full but no local shape classifiers
   PKG.BOXHELP = false;
-  outpath = '/plot/btay/projects/detachable/cdov/week20-cdov-r0.5-fullnobox';
+  outpath = fullfile(plotbase, 'cvos-r1.0-fullnobox');
 elseif strcmp(model, 'fullnop'); % full but no constraint perturbation 
   PKG.DO_CONS_PERTURB = false;
   PKG.DO_CONS_NOW_PERTURB = false;
-  outpath = '/plot/btay/projects/detachable/cdov/week20-cdov-r0.5-fullnop';
+  outpath = fullfile(plotbase, 'cvos-r1.0-fullnop');
 elseif strcmp(model, 'fullnopcbf'); % full but no constraint perturbation 
   PKG.DO_CROSSBILATERALFILTERFLOW = false; % CHANGE NEW EXPERIMENTS 20150328
   PKG.DO_CONS_PERTURB = false;
   PKG.DO_CONS_NOW_PERTURB = false;
-  outpath = fullfile(plotbase, 'cdov_cvpr15/wcr-cdov-r0.6-fullnopcbf');
+  outpath = fullfile(plotbase, 'wcr-cvos-r1.0-fullnopcbf');
 elseif strcmp(model, 'fullpnocbf'); % full but no constraint perturbation 
   PKG.DO_CROSSBILATERALFILTERFLOW = false; % CHANGE NEW EXPERIMENTS 20150328
-  outpath = fullfile(plotbase, 'cdov_cvpr15/wcr-cdov-r0.6-fullpnocbf');
+  outpath = fullfile(plotbase, 'wcr-cvos-r1.0-fullpnocbf');
 elseif strcmp(model, 'fullcbfnop'); % full but no constraint perturbation 
   PKG.DO_CROSSBILATERALFILTERFLOW = false; % CHANGE NEW EXPERIMENTS 20150328
-  outpath = fullfile(plotbase, 'cdov_cvpr15/wcr-cdov-r0.6-fullcbfnop');
+  outpath = fullfile(plotbase, 'wcr-cvos-r1.0-fullcbfnop');
 elseif strcmp(model, 'fxfnocbf');
   PKG.CAUSAL = false;
   PKG.WEIGHTSHELP = false; % should be set not to help, but just in case
@@ -106,7 +106,7 @@ elseif strcmp(model, 'fxfnocbf');
   PKG.DO_CONS_NOW_PERTURB = false;
   PKG.DO_FORBACKCAUSAL = false;
   PKG.DO_CROSSBILATERALFILTERFLOW = false; % CHANGE FOR NEW EXPERIMENTS 20150323
-  outpath = '/plot/btay/projects/detachable/cdov_cvpr15/wcr-cdov-r0.6-fxfnocbf'; % fxf
+  outpath = fullfile(plotbase, 'wcr-cvos-r1.0-fxfnocbf'); % fxf
 elseif strcmp(model, 'fxf');
   PKG.CAUSAL = false;
   PKG.WEIGHTSHELP = false; % should be set not to help, but just in case
@@ -116,7 +116,7 @@ elseif strcmp(model, 'fxf');
   PKG.DO_CONS_PERTURB = false; % not necessary but just in case
   PKG.DO_CONS_NOW_PERTURB = false;
   PKG.DO_FORBACKCAUSAL = false;
-  outpath = '/plot/btay/projects/detachable/cdov_cvpr15/wcr-cdov-r0.6-fxf'; % fxf
+  outpath = fullfile(plotbase, 'wcr-cvos-r1.0-fxf'); % fxf
 elseif strcmp(model, 'alp');
   PKG.CAUSAL = true;
   PKG.WEIGHTSHELP = true;
@@ -126,7 +126,7 @@ elseif strcmp(model, 'alp');
   PKG.DO_FORBACKCAUSAL = false;
   PKG.DO_CONS_PERTURB = false; % not necessary but just in case
   PKG.DO_CONS_NOW_PERTURB = false;
-  outpath = '/plot/btay/projects/detachable/cdov_cvpr15/wcr-cdov-r0.6-alp'; % alp
+  outpath = fullfile(plotbase, 'wcr-cvos-r1.0-alp'); % alp
 elseif strcmp(model, 'wfg');
   PKG.CAUSAL = true;
   PKG.WEIGHTSHELP = false;
@@ -136,7 +136,7 @@ elseif strcmp(model, 'wfg');
   PKG.DO_FORBACKCAUSAL = false;
   PKG.DO_CONS_PERTURB = false; % not necessary but just in case
   PKG.DO_CONS_NOW_PERTURB = false;
-  outpath = '/plot/btay/projects/detachable/cdov_cvpr15/wcr-cdov-r0.6-wfg'; % alp
+  outpath = fullfile(plotbase, 'wcr-cvos-r1.0-wfg'); % alp
 elseif strcmp(model, 'fxfperturb');
   PKG.CAUSAL = false;
   PKG.WEIGHTSHELP = false; % should be set not to help, but just in case
@@ -146,7 +146,7 @@ elseif strcmp(model, 'fxfperturb');
   PKG.DO_CONS_PERTURB = false; % not necessary but just in case
   PKG.DO_CONS_NOW_PERTURB = true;
   PKG.DO_FORBACKCAUSAL = false;
-  outpath = '/plot/btay/projects/detachable/cdov/week20-cdov-r0.6-fxfperturb'; % fxfperturb
+  outpath = fullfile(plotbase, 'cvos-r1.0-fxfperturb'); % fxfperturb
 end
 PKG.outpath = outpath;
 try
@@ -163,7 +163,7 @@ for sid = seqs;
   % try
     fprintf('========= running seq: %s ==============\n', s);
     unix(sprintf('touch ./%s.running', s));
-    cdov(sid{1}, PKG);
+    cvos(sid{1}, PKG);
     unix(sprintf('rm ./%s.running', s));
     fprintf('========= finished seq: %s =============\n', s);
   % catch e
