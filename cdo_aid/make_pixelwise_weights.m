@@ -1,5 +1,4 @@
-function [w, w_div] = make_pixelwise_weights2( ...
-  idx, I, uvb_, uvf_, gpb, weights, opts)
+function [w, w_div] = make_pixelwise_weights( idx, I, uvb_, uvf_, gpb, weights, opts)
 
 %--------------------------------------------------------------------
 % settings 
@@ -22,7 +21,7 @@ n = rows * cols;
 %--------------------------------------------------------------------
 % meat
 %--------------------------------------------------------------------
-I = reshape(I, [numel(I)/3, 3]);
+I = reshape(I, [numel(I)/chan, chan]);
 uvf = reshape(uvf_, [numel(uvf_)/2, 2]);
 uvb = reshape(uvb_, [numel(uvb_)/2, 2]);
 idx1 = idx(:,1);
@@ -56,7 +55,6 @@ if weights(2)>0
     sz = [15, 15];
     mf = fspecial('average', sz);
     med_uvf = imfilter(reshape(w_uvf, [rows, cols]), mf);
-    % med_uvf = medfilt2(reshape(w_uvf, [rows, cols]), sz);
     wmed_uvf = mean([med_uvf(idx1), med_uvf(idx2)], 2);
     w_uvf_ = exp( -w_uvf ./ max(MINWUV, wmed_uvf) );
 
@@ -66,20 +64,6 @@ if weights(2)>0
     w_uvb_ = exp( -w_uvb ./ max(MINWUV, wmed_uvb) );
 
     w_mag = 0.5*(w_uvf_ + w_uvb_);
-
-    %%% sz = [9, 9];
-    %%% uvf_mag = sum(uvf_ .^ 2, 3);
-    %%% med_uvf = medfilt2(uvf_mag, sz);
-    %%% % wmed_uvf = mean([med_uvf(idx1), med_uvf(idx2)], 2);
-    %%% wmed_uvf = abs(med_uvf(idx1) - med_uvf(idx2));
-    %%% w_uvf = exp( -w_uvf ./ max(MINWUV, wmed_uvf) );
-    %%% uvb_mag = sum(uvb_ .^ 2, 3);
-    %%% med_uvb = medfilt2(uvb_mag, sz);
-    %%% % wmed_uvb = mean([med_uvb(idx1), med_uvb(idx2)], 2);
-    %%% wmed_uvb = abs(med_uvb(idx1) - med_uvb(idx2));
-    %%% w_uvb = exp( -w_uvb ./ max(MINWUV, wmed_uvb) );
-
-    %%% w_mag = 0.5*(w_uvf + w_uvb);
   end
 
   % compute angle weights:

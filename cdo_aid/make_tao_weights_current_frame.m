@@ -17,7 +17,7 @@ v2struct(opts);
 %------------------------------------------------------------------
 % weights current frame
 %------------------------------------------------------------------ 
-weights = make_pixelwise_weights2([dx_inds; dy_inds], ...
+weights = make_pixelwise_weights([dx_inds; dy_inds], ...
   Ilab, uvb, uvf, E, relative_weights, opts);
 
 weights_sigmoid = sigmoid(weights, SIGMOID_MEAN, SIGMOID_SCALE);

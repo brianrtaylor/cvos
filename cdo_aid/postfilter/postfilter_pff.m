@@ -11,7 +11,7 @@ function seg = seg_pff(layers, sigma, K, minsize)
     % turn layers into an RGB image.
     L = uint8( round( repmat(layers,[1 1 3])/max(layers(:))*255 ) );
     out = pff_segment_mex(L, sigma, K, minsize);
-    % pff outputs an idiotic RGB colored segmentation. here convert it to
+    % pff outputs a RGB colored segmentation. here convert it to
     % discrete labels.
     out_ = reshape(out, [numel(out)/3, 3]);
     [~, ~, cj] = unique(out_,'rows');

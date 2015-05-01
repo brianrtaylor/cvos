@@ -173,13 +173,11 @@ function [constraints, constraint_ages, gmm_weights, warp_weights, valid] = ...
     gmm_weights(ind_inactive(valid_inactive)) = gmm_weights_inactive;
     gmm_weights(ind_active(valid_active)) = gmm_weights_active;
     gmm_weights = gmm_weights(logical(valid), :);
-    % gmm_weights = [gmm_weights_inactive; gmm_weights_active];
     gmm_weights(isnan(gmm_weights) | isinf(gmm_weights)) = 0.0;
     
     warp_weights = zeros(N, 1);
     warp_weights(ind_inactive(valid_inactive)) = warp_weights_inactive;
     warp_weights(ind_active(valid_active)) = warp_weights_active;
     warp_weights = warp_weights(logical(valid), :);
-    % warp_weights = [warp_weights_inactive; warp_weights_active];
-    warp_weights(isnan(gmm_weights) | isinf(gmm_weights)) = 0.0;
+    warp_weights(isnan(warp_weights) | isinf(warp_weights)) = 0.0;
 end
