@@ -25,7 +25,7 @@ BEGIN = 1;
 if isnumeric(DATA); % btay datapath
   paramsIn = struct();
   paramsIn.expName = 'combine';
-  [p, params] = ttaobdData(DATA, paramsIn);
+  [p, params] = tcvosbdData(DATA, paramsIn);
   p.expName = paramsIn.expName;
   img_path = p.dpath;
   flow_path = p.uvpath;
@@ -52,7 +52,7 @@ T = length(files);
 %----------------------------------------------------------------------------%
 % algorithm settings
 %----------------------------------------------------------------------------%
-params = tao_params_default();
+params = cvos_params_default();
 
 %==============================================================================
 % use this to overwrite any variables used in here before running

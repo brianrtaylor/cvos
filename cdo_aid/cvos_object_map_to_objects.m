@@ -1,5 +1,5 @@
 %-------------------------------------------------------------------------
-% tao_object_map_to_objects
+% cvos_object_map_to_objects
 %
 % % @param: objects : structure array of objects
 % @param: object_map : image of object labels obtained from 
@@ -10,7 +10,7 @@
 % * id : id of object
 % * u, v : average motion of the object
 %-------------------------------------------------------------------------
-function objects = tao_object_map_to_objects(object_map, uvf)
+function objects = cvos_object_map_to_objects(object_map, uvf)
 nobjects = max(object_map(:));
 objects = [];
 

@@ -1,5 +1,5 @@
-function [boxes, prob_box_fg, prob_box_bg, count_box_fg, count_box_bg, weights_box] = tao_get_prob_from_boxes( ...
-  occb_mask, past, i1_bflt, boxes, opts)
+function [boxes, prob_box_fg, prob_box_bg, count_box_fg, count_box_bg, weights_box] = ...
+            cvos_get_prob_from_boxes( occb_mask, past, i1_bflt, boxes, opts)
 
 [rows, cols] = size(occb_mask);
 imsize = [rows, cols];
@@ -104,8 +104,7 @@ if ~isempty(past.layers) && opts.CAUSAL && opts.BOXHELP && ~isempty(boxes);
   lay_occd = cat(1, boxes_new.lay_occd);
   [prob_box_fg, count_box_fg] = bboxes_to_prob_image( ...
     imsize, boxes_new, 1, bb_conf, bb_conf_inter);
-  % [prob_box_local_bg, count_box_local_bg] = bboxes_to_prob_image( ...
-  %   imsize, boxes_new, 0, bb_conf, bb_conf_inter);
+
   [prob_box_bg, count_box_bg] = bboxes_to_prob_image(imsize, ...
     boxes_new, 0, bb_conf .* max(0.0, 1.0 - lay_occd), bb_conf_inter);
   

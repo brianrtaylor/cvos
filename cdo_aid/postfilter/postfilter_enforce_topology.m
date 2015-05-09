@@ -1,4 +1,5 @@
-% not sure whether this will do the right thing...
+% every region assigned to a nonzero layer (i.e. c=1,2,3,...) must be 
+% connected to a region with layer value smaller by 1.
 function layers_ = postfilter_enforce_topology(layers)
     imsize = size(layers);
     layers_ = layers;

@@ -1,5 +1,5 @@
 %-------------------------------------------------------------------------
-% tao_update_objects
+% cvos_update_objects
 %
 % % @param: objects : structure array of objects
 % @param: object_map : image of object labels obtained from 
@@ -14,7 +14,7 @@
 % @problem: what if we have objects, they disappear later, and then lastly
 % we get objects again. what will happen? --> they become different objects
 %-------------------------------------------------------------------------
-function [objects_out, object_map_out, n_active] = tao_update_objects( ...
+function [objects_out, object_map_out, n_active] = cvos_update_objects( ...
   objects, object_map, object_map_snap, uvb_warp, uvf)
 nnewobjects = max(object_map_snap(:));
 % nobjects = length(objects);

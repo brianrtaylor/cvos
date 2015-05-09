@@ -1,4 +1,4 @@
-function params = tao_params_default
+function params = cvos_params_default
 
 params = struct;
 

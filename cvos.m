@@ -30,7 +30,6 @@ I2 = imread(fullfile(img_path, files(BEGIN+1).name));
 if (size(I1,3)==1), I1 = repmat(I1,[1 1 3]); end;
 if (size(I2,3)==1), I2 = repmat(I2,[1 1 3]); end;
 [rows, cols, ~] = size(I1);
-npx = rows * cols;
 imsize = [rows, cols];
 uvsize = [rows, cols, 2];
 i1 = im2double(rgb2gray(I1));
@@ -39,7 +38,7 @@ i2 = im2double(rgb2gray(I2));
 %----------------------------------------------------------------------------%
 % algorithm settings
 %----------------------------------------------------------------------------%
-params = tao_params_default();
+params = cvos_params_default();
 
 edge_model = load('modelFinal.mat');
 
@@ -113,13 +112,6 @@ if 1 ...% 0 ...
   fprintf('results files are in: %s\n', outpath);
   return
 end
-
-%-----------------------------------------------------------------------
-%-----------------------------------------------------------------------
-% Work for this execution of cvos
-%-----------------------------------------------------------------------
-%-----------------------------------------------------------------------
-
 %-----------------------------------------------------------------------
 % first frame init, for storying "history"
 %-----------------------------------------------------------------------
@@ -233,8 +225,7 @@ problem.layer_upper_bound = 3;
 problem.imsize = imsize;
 problem.nnodes = prod(imsize(1:2));
 problem.nedges = 2*prod(imsize(1:2));
-pones = ones(problem.nnodes, 1);
-problem.tau1 = params.TAU1 * pones;
+problem.tau1 = params.TAU1 * ones(problem.nnodes, 1);
 
 %-----------------------------------------------------------------------
 % boxes
@@ -248,7 +239,6 @@ boxes = [];
 % unary occlusions term
 unary_constraints_map = zeros(imsize);
 
-I1_bflt = [];
 I1lab = [];
 object_map = zeros(imsize);
 objects = [];
@@ -333,15 +323,12 @@ for k = BEGIN:FINISH;
   I2 = imread(fullfile(img_path, files(k+1).name));
   if (size(I2,3)==1), I2 = repmat(I2,[1 1 3]); end;
   i2 = im2double(rgb2gray(I2));
-  % I0_bflt = I1_bflt;
   I0lab = I1lab;
   
   % pre-processing on current t
   I1_bflt = recursive_bf_mex(I1, 0.01, 0.1, 1, 5);
   i1_bflt = im2double(I1_bflt);
-  % I1lab = vl_xyz2lab(vl_rgb2xyz( uint8(i1_bflt*255) ));
   I1lab = vl_xyz2lab(vl_rgb2xyz(uint8(I1_bflt)));
-  % Ilab = vl_xyz2lab(vl_rgb2xyz(I1));
   
   E = edgesDetect(I1_bflt, edge_model.model);
   EdgeDollar = 0.75*(1-E);
@@ -355,12 +342,12 @@ for k = BEGIN:FINISH;
   a = tic();
   [uvb, uvb_cbf, uvf, uvf_cbf, uvb_rev, uvf_rev, ...
     occb, occb_cbf, occb_cbf_prob, occf, occf_cbf, occf_cbf_prob, ...
-    occb_rev, occf_rev, occb_rev_prob, occf_rev_prob] = ...
-    tao_flow_occ(flow_path, flow_files, seq, k, T, ...
+    ~, occf_rev, occb_rev_prob, occf_rev_prob] = ...
+    cvos_flow_occ(flow_path, flow_files, seq, k, T, ...
     i0, i1, i2, I0, I1, I2, past, opts_flow_occ);
   
   t_flowocc_cbf = toc(a);
-  fprintf('C: calc flow and occusions (cbf): %0.3f\n', t_flowocc_cbf);
+  fprintf('C: calc flow and occlusions (cbf): %0.3f\n', t_flowocc_cbf);
   a = tic();
   
   % TODO: check if I should do this on uvf_cbf;
@@ -374,23 +361,19 @@ for k = BEGIN:FINISH;
   uvb_rev_bflt = recursive_bf_mex(double(uvb_rev), 0.05, 0.004, 0, 10);
   
   t_flowocc_bf = toc(a);
-  fprintf('C: calc flow and occusions (bf): %0.3f\n', t_flowocc_bf);
+  fprintf('C: calc flow and occlusions (bf): %0.3f\n', t_flowocc_bf);
   
   %------------------------------------------------------------------
   % layers put into the current frame reference frame
   %------------------------------------------------------------------
   a = tic();
   
-  % potentially use more fancy way to find the occb_mask
   occb_mask = occb_cbf_prob > params.OCCPROBLAYERTHRESH;
   
-  % layers_t0 = utils_warp_image(past.layers, uvf_rev); % oh feck
-  % 20141025, that is a terrible bug, should be a uvb variant
   if ~isempty(past.layers) && params.CAUSAL;
     fprintf('removing occb mask.\n')
     layers_t0 = round(utils_warp_image(past.layers, uvb_cbf_bflt));
-    [past.t0.layers, layers_t0_msfm] = remove_occb_mask( ...
-      layers_t0, occb_mask, 0, 0);
+    [past.t0.layers] = remove_occb_mask( layers_t0, occb_mask, 0, 0);
   end
   
   t_layersnow = toc(a);
@@ -403,8 +386,7 @@ for k = BEGIN:FINISH;
   
   if ~isempty(past.layers) && params.CAUSAL;
     fprintf('C: computing local shape classifiers.\n');  
-    [boxes, prob_box_fg, prob_box_bg, count_box_fg, count_box_bg, ...
-      weights_box] = tao_get_prob_from_boxes( ...
+    [boxes, prob_box_fg, ~, count_box_fg, ~, weights_box] = cvos_get_prob_from_boxes( ...
       occb_mask, past, I1lab, boxes, opts_boxes); % i1_bflt
   end
   
@@ -416,21 +398,12 @@ for k = BEGIN:FINISH;
   %------------------------------------------------------------------
   a = tic();
   
-  [constraints_now_b, constraint_weights_now_b, indbad_now_b] ...
-    = make_tao_constraints(occb_cbf_prob, uvb_cbf_bflt, uvb_rev_bflt, ...
+  [constraints_now_b, constraint_weights_now_b] ...
+    = make_cvos_constraints(occb_cbf_prob, uvb_cbf_bflt, uvb_rev_bflt, ...
     params.OCCPROB, params.MINCONSTRAINTDIST, params.VIS, 16);
-  [constraints_now_f, constraint_weights_now_f, indbad_now_f] ...
-    = make_tao_constraints(occf_cbf_prob, uvf_cbf_bflt, uvf_rev_bflt, ...
-    params.OCCPROB, params.MINCONSTRAINTDIST, params.VIS, 17);
-    
-  % % if params.UNARYOCC;
-  % %   [constraints_uno_now_b, constraint_weights_uno_now_b, indbad_uno_now_b, ...
-  % %     constraints_uno_img_now_b] = make_tao_unary_constraints( ...
-  % %     occb_cbf_prob, uvb_cbf, params.OCCPROB);
-  % %   [constraints_uno_now_f, constraint_weights_uno_now_f, indbad_uno_now_f, ...
-  % %     constraints_uno_img_now_f] = make_tao_unary_constraints( ...
-  % %     occf_cbf_prob, uvf_cbf, params.OCCPROB);
-  % % end
+  [constraints_now_f, constraint_weights_now_f] ...
+    = make_cvos_constraints(occf_cbf_prob, uvf_cbf_bflt, uvf_rev_bflt, ...
+    params.OCCPROB, params.MINCONSTRAINTDIST, params.VIS);
   
   t_constraints_now = toc(a);
   fprintf('C: constraints now: %0.3f\n', t_constraints_now);
@@ -440,14 +413,9 @@ for k = BEGIN:FINISH;
   %------------------------------------------------------------------
   a = tic();
   
-  [weights_now, weights_inds] = make_tao_weights_current_frame( ...
+  [weights_now, weights_inds] = make_cvos_weights_current_frame( ...
     I1lab, uvb_cbf_bflt, uvf_cbf_bflt, dx_inds, dy_inds, ...
     EdgeDollar, opts_current_weights);
-  
-  % % if params.BOXHELP && ~isempty(boxes);
-  % %   weights_now = (1 - params.BOXTVWEIGHT) * weights_now ...
-  % %     + max(0.0, params.BOXTVWEIGHT * weights_boxes);
-  % % end
   
   t_weights_now = toc(a);
   fprintf('C: weights now: %0.3f\n', t_weights_now);  
@@ -460,34 +428,21 @@ for k = BEGIN:FINISH;
   a = tic();
   if ~isempty(constraints_now_b);
     [constraints_now_b, constraint_weights_now_b, ...
-      constraint_weights_now_nodiv_b] = make_tao_constraint_weights( ...
+      constraint_weights_now_nodiv_b] = make_cvos_constraint_weights( ...
       constraints_now_b, constraint_weights_now_b, uvf_bflt, uvb_cbf_bflt, ...
       I1lab, weights_now, EdgeDollar, opts_constraint_weights, 18);
-      % I1_bflt, weights_now, EdgeDollar, opts_constraint_weights, 18);
   else
     constraint_weights_now_nodiv_b = [];
   end
   
   if ~isempty(constraints_now_f);
     [constraints_now_f, constraint_weights_now_f, ...
-      constraint_weights_now_nodiv_f] = make_tao_constraint_weights( ...
+      constraint_weights_now_nodiv_f] = make_cvos_constraint_weights( ...
       constraints_now_f, constraint_weights_now_f, uvb_bflt, uvf_cbf_bflt, ...
       I1lab, weights_now, EdgeDollar, opts_constraint_weights, 19);
-      % I1_bflt, weights_now, EdgeDollar, opts_constraint_weights, 19);
   else
     constraint_weights_now_nodiv_f = [];
   end
-  
-  % % if params.UNARYOCC;
-  % %   [constraints_uno_now_b, constraint_weights_uno_now_b, ...
-  % %     constraints_uno_img_now_b] = make_tao_unary_constraint_weights( ...
-  % %     constraints_uno_now_b, constraint_weights_uno_now_b, ...
-  % %     uvf, uvf_rev, I1, I2, opts_constraint_weights);
-  % %   [constraints_uno_now_f, constraint_weights_uno_now_f, ...
-  % %     constraints_uno_img_now_f] = make_tao_unary_constraint_weights( ...
-  % %     constraints_uno_now_f, constraint_weights_uno_now_f, ...
-  % %     uvf, uvf_rev, I1, I2, opts_constraint_weights);
-  % % end
   
   t_constraint_weights_now = toc(a);
   fprintf('C: constraint weights now: %0.3f\n', t_constraint_weights_now);
@@ -498,7 +453,7 @@ for k = BEGIN:FINISH;
   a = tic();
   
   if ~isempty(past.weights) && params.CAUSAL && params.WEIGHTHELP;
-    [weights, wx_l, wy_l, past] = propagate_tao_weights( ...
+    [weights, wx_l, wy_l, past] = propagate_cvos_weights( ...
       weights_now, uvb_cbf_bflt, past, occb_mask, ...
       Dx, Dy, k, opts_propagate);
   else
@@ -515,7 +470,7 @@ for k = BEGIN:FINISH;
   
   if ~isempty(past.unity) && params.UNITYHELP && params.CAUSAL ...
     && params.PROB_UNITY > 0;
-    unity = tao_unity_prior(past, uvb_bflt, uvb_cbf_bflt, ...
+    unity = cvos_unity_prior(past, uvb_bflt, uvb_cbf_bflt, ...
       wx_l, wy_l, occb_mask, k, opts_unity);
   else
     unity = zeros(uvsize);
@@ -536,7 +491,7 @@ for k = BEGIN:FINISH;
   
   if ~isempty(past.constraints_b) && params.CAUSAL && params.CONSTRAINTHELP;
     [constraints_b, constraint_weights_b, constraints_causal_b, ...
-      constraint_weights_old_b, valid_b] = propagate_tao_constraint_weights( ...
+      constraint_weights_old_b] = propagate_cvos_constraint_weights( ...
       I0lab, I1lab, i1_bflt, uvf_bflt, uvb_cbf_bflt, past, ...
       past.constraints_b, past.constraint_weights_b, past.weights, ...
       weights, past.xi_b, EdgeDollar, constraints_now_b, ...
@@ -552,7 +507,7 @@ for k = BEGIN:FINISH;
 
   if ~isempty(past.constraints_f) && params.CAUSAL && params.CONSTRAINTHELP;
     [constraints_f, constraint_weights_f, constraints_causal_f, ...
-      constraint_weights_old_f, valid_f] = propagate_tao_constraint_weights( ...
+      constraint_weights_old_f] = propagate_cvos_constraint_weights( ...
       I0lab, I1lab, i1_bflt, uvb_bflt, uvf_cbf_bflt, past, ...
       past.constraints_f, past.constraint_weights_f, past.weights, ...
       weights, past.xi_f, EdgeDollar, constraints_now_f, ...
@@ -604,7 +559,7 @@ for k = BEGIN:FINISH;
   a = tic();
   
   if ~isempty(past.prob_fg) && params.CAUSAL && params.PROB_FG > 0;
-    prob_fg = tao_fg_prior(past, uvb_cbf_bflt, occb_mask, opts_fg); 
+    prob_fg = cvos_fg_prior(past, uvb_cbf_bflt, occb_mask, opts_fg); 
   else
     prob_fg = zeros(imsize);
   end
@@ -616,10 +571,7 @@ for k = BEGIN:FINISH;
   % solve problem
   %------------------------------------------------------------------
   a = tic();
-  
-  %%%% ALSO TODO: those constraint weights not building much, not 
-  %%%% increasing over time well :/
- 
+
   % creates constraints to keep going without crashing
   if isempty(constraints);
     problem.constraints = [[1,2];[2,3]]; 
@@ -698,7 +650,6 @@ for k = BEGIN:FINISH;
     if params.CAUSAL && params.BOXHELP && ~isempty(boxes);
       % use this, since the other will hurt 2 objects moving towards overlap
       box_kappa = params.PROB_BOX_FG * prob_box_fg;
-      % box_kappa = params.PROB_BOX_FG * (prob_box_fg - prob_box_bg);
     else
       box_kappa = 0;
     end
@@ -759,10 +710,8 @@ for k = BEGIN:FINISH;
   %------------------------------------------------------------------------
   % TODO: filter the layers
   %------------------------------------------------------------------------
-  a = tic();
-  
+  a = tic();  
   layers = postfilter_layers(layers, double(i1_bflt), 0.5);
-  
   t_postfilter = toc(a);
   fprintf('C: postfiltering: %0.3f\n', t_postfilter);
   
@@ -877,7 +826,7 @@ for k = BEGIN:FINISH;
   
   if params.CAUSAL && params.BOXHELP;  
     past.boxes = boxes;
-    boxes = tao_update_box_models( ...
+    boxes = cvos_update_box_models( ...
       boxes, layers, I1lab, Dx, Dy, weights, opts_box_models); 
     % i1_bflt
   end
@@ -890,8 +839,8 @@ for k = BEGIN:FINISH;
   %------------------------------------------------------------------------
   a = tic();
   
-  [object_map_snap, last_obj_id] = layers_to_detachable_objects(layers);
-  [objects_out, object_map_out] = tao_update_objects( ...
+  [object_map_snap] = layers_to_detachable_objects(layers);
+  [objects_out, object_map_out] = cvos_update_objects( ...
     objects, object_map, object_map_snap, uvb_bflt, uvf_bflt);
   
   objects = objects_out;
@@ -906,9 +855,7 @@ for k = BEGIN:FINISH;
   a = tic();
   
   if ~isempty(past.layers) && params.CAUSAL; 
-    % [object_mean_uvf_map, object_mean_uvf_map_t0] = ...
-    %   tao_get_object_flow_maps(objects, object_map, uvf_rev_bflt);
-    object_mean_uvf_map = tao_get_object_flow_maps(objects, object_map);
+    object_mean_uvf_map = cvos_get_object_flow_maps(objects, object_map);
     
     uvdiff = uvf_cbf_bflt - object_mean_uvf_map;
     fg_uvf_diff = sqrt(sum(uvdiff .^ 2, 3));

@@ -8,7 +8,7 @@
 #include <vector>
 #include <cassert>
 #include "cvos_common.h"
-#include "gmm_utils.cpp"
+#include "gmm_utils.h"
 
 using namespace std;
 
@@ -41,11 +41,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
   double I_spot[chan];
   int box_idx;
 
-  double valid[n_boxes];
-  for (int k = 0; k < n_boxes; ++k) {
-    valid[k] = 1;
-  }
-
   //----------------------------------------------------------------------
   // do some work
   //----------------------------------------------------------------------
@@ -63,14 +58,14 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     // create output arrays
     mxArray* fg_prob_box = mxCreateDoubleMatrix(diam, diam, mxREAL);
     mxArray* bg_prob_box = mxCreateDoubleMatrix(diam, diam, mxREAL);
-    double* fg_prob = (double*) mxGetPr( fg_prob_box);
-    double* bg_prob = (double*) mxGetPr( bg_prob_box);
+    double* fg_prob = (double*) mxGetPr( fg_prob_box );
+    double* bg_prob = (double*) mxGetPr( bg_prob_box );
     mxSetField(box_fg, i, "prob", fg_prob_box);
     mxSetField(box_bg, i, "prob", bg_prob_box);
 
     for (int ii = 0; ii < numel_box; ++ii) { 
-      fg_prob[ii] = mxGetNaN();
-      bg_prob[ii] = mxGetNaN();
+      fg_prob[ii] = 0.5; //mxGetNaN();
+      bg_prob[ii] = 0.5; //mxGetNaN();
     }
 
     // get gmm info
@@ -86,13 +81,11 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     int gmm_dim = sz[0];
     int K = sz[1];
 
-    // mexPrintf("box: %d, gmm_dim: %d, K: %d\n", i, gmm_dim, K);
-
     int bad1 = (mxIsNaN(fg_mu[0]) || mxIsNaN(bg_mu[0]));
     int bad2 = (mxIsNaN(fg_cov[0]) || mxIsNaN(bg_cov[0]));
     int bad3 = (mxIsNaN(fg_pi[0]) || mxIsNaN(bg_pi[0]));
     
-    if (bad1 || bad2 || bad3) { valid[i] = 0; continue; }
+    if (bad1 || bad2 || bad3) { continue; }
 
     int cy = (int) MAT2C(y);
     int cx = (int) MAT2C(x);
@@ -102,8 +95,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     int xmin = max(0       , (int) (cx - r) );
     int xmax = min(cols - 1, (int) (cx + r) );
 
-
-
     for (int cc = xmin; cc <= xmax; ++cc) {
       for (int rr = ymin; rr <= ymax; ++rr) {
         int idx = linear_index(rr,cc,rows);
@@ -112,19 +103,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
           I_spot[u] = I0[ linear_index(rr, cc, u, rows, cols) ];
         }
 
-        // double p_occr_fg = utils_eval_gmm_fast( I_spot, 
-        //   fg_mu, fg_cov, fg_pi, gmm_dim, K);
-        // double p_occr_bg = utils_eval_gmm_fast( I_spot, 
-        //   bg_mu, bg_cov, bg_pi, gmm_dim, K); 
-        // double p_occd_fg = utils_eval_gmm_fast( I_spot, 
-        //   fg_mu, fg_cov, fg_pi, gmm_dim, K); 
-        // double p_occd_bg = utils_eval_gmm_fast( I_spot, 
-        //   bg_mu, bg_cov, bg_pi, gmm_dim, K); 
-
-        // double p_pxl_fg = utils_eval_gmm_fast( I_spot, 
-        //   fg_mu, fg_cov, fg_pi, gmm_dim, K);
-        // double p_pxl_bg = utils_eval_gmm_fast( I_spot, 
-        //   bg_mu, bg_cov, bg_pi, gmm_dim, K); 
         double p_pxl_fg = utils_eval_gmm_fast( I_spot, 
           fg_mu, fg_cov, fg_pi, gmm_dim, K);
         double p_pxl_bg = utils_eval_gmm_fast( I_spot, 

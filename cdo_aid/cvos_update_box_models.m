@@ -1,4 +1,4 @@
-function boxes = tao_update_box_models( ...
+function boxes = cvos_update_box_models( ...
   boxes, layers, i1_bflt, Dx, Dy, weights, opts)
 BOX_LIMIT = inf;
 GMM_PROB_FG_MASK_THRESH = 0.75;
@@ -22,8 +22,7 @@ if opts.CAUSAL && opts.BOXHELP;
   %-----------------------------------------------------------------
   % learn gmm if foreground objects exist and we have valid boxes
   %-----------------------------------------------------------------
-  if ~isempty(all_boxes) && max(layers(:)) >= 1;
-
+  if ~isempty(all_boxes) && max(layers(:)) >= 1;     
     [mu_fg, cov_fg, pi_fg, mu_bg, cov_bg, pi_bg] = learn_bbox_gmm_mex( ...
       i1_bflt, double(layers), double(weights), all_boxes, ...
       CP.NUM_GMM_CLUSTERS, CP.NUM_GMM_REPETITIONS, CP.NUM_GMM_ITERATIONS, ...
@@ -44,7 +43,7 @@ if opts.CAUSAL && opts.BOXHELP;
         new_boxes(bk).bg_gmm_cov = cov_bg(:,:,bk);
         new_boxes(bk).bg_gmm_pi = pi_bg(:,bk);
       end
-      
+
       [box_fg, box_bg] = eval_gmm_bboxes_mex(i1_bflt, new_boxes);
       for bk = 1:n_newboxes;
         new_boxes(bk).fg_prob = box_fg(bk).prob;
@@ -75,6 +74,18 @@ if opts.CAUSAL && opts.BOXHELP;
         up_boxes(bk).bg_gmm_mu  = [boxes(bk).bg_gmm_mu, mu_bg(:,:,bk)];
         up_boxes(bk).bg_gmm_cov = [boxes(bk).bg_gmm_cov, cov_bg(:,:,bk)];
         up_boxes(bk).bg_gmm_pi  = [boxes(bk).bg_gmm_pi; pi_bg(:,bk)];
+
+        valid = ~isnan(up_boxes(bk).fg_gmm_pi) & ... 
+                ~isnan(up_boxes(bk).bg_gmm_pi);
+        up_boxes(bk).fg_gmm_mu  = up_boxes(bk).fg_gmm_mu(:, valid);
+        up_boxes(bk).fg_gmm_cov = up_boxes(bk).fg_gmm_cov(:, valid);
+        up_boxes(bk).fg_gmm_pi  = up_boxes(bk).fg_gmm_pi(valid);        
+        up_boxes(bk).fg_gmm_pi = up_boxes(bk).fg_gmm_pi/sum(up_boxes(bk).fg_gmm_pi);
+
+        up_boxes(bk).bg_gmm_mu  = up_boxes(bk).bg_gmm_mu(:, valid);
+        up_boxes(bk).bg_gmm_cov = up_boxes(bk).bg_gmm_cov(:, valid);
+        up_boxes(bk).bg_gmm_pi  = up_boxes(bk).bg_gmm_pi(valid);        
+        up_boxes(bk).bg_gmm_pi = up_boxes(bk).bg_gmm_pi/sum(up_boxes(bk).bg_gmm_pi);
       end
       [box_fg_2, box_bg_2] = eval_gmm_bboxes_mex(i1_bflt, up_boxes);
   

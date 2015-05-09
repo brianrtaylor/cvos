@@ -1,5 +1,5 @@
 % returns simple constraints / constraint weights
-function [constraints_uno, constraint_weights_uno, indbad_uno, constraints_uno_img] = make_tao_unary_constraints( ...
+function [constraints_uno, constraint_weights_uno, indbad_uno, constraints_uno_img] = make_cvos_unary_constraints( ...
   occ_prob, uv, OCCPROB)
 
 [rows, cols, ~] = size(uv);

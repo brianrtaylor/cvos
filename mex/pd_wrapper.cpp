@@ -328,5 +328,4 @@ void print_primaldual_params(const primaldual_params& params) {
     mexPrintf("occweights: %d\n", params.prob.occweights.size() );
     mexPrintf("Wx: %d\n", params.prob.weights.size() );
     mexPrintf("kappa: %d\n", params.prob.kappa.size() );
-    mexPrintf("kappa: %d\n", params.prob.kappa.size() );
 }

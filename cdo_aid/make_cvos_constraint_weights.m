@@ -1,5 +1,5 @@
 %--------------------------------------------------------------------
-% make_tao_constraint_weights
+% make_cvos_constraint_weights
 %
 % @param: opts : contains useful options
 %   * DO_CONS_PERTURB : 1 to perturb constraints with gmm
@@ -7,7 +7,7 @@
 %   * CONSTRAINTS_DIVWEIGHT : 1 to use negative divergence for weighting constraints
 %   * relative_weights_constraints : weights between intensity and flow and gpb
 %--------------------------------------------------------------------
-function [constraints, constraint_weights, w] = make_tao_constraint_weights( ...
+function [constraints, constraint_weights, w] = make_cvos_constraint_weights( ...
   constraints_in, constraint_weights_in, uvb, uvf, I, I_weights, E, opts, lol)
 v2struct(opts);
 

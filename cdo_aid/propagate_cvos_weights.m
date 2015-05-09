@@ -1,13 +1,12 @@
 %------------------------------------------------------------------
-% tao weights: computes weights step for framework
-% 
+% cvos weights: computes weights step for framework
 % @param: opts : contraints : edge_model 
 %------------------------------------------------------------------
-% function [weights, wx_l, wy_l, past] = propagate_tao_weights( ...
+% function [weights, wx_l, wy_l, past] = propagate_cvos_weights( ...
 %   weights_now, uvb, past, occb_mask, ...
 %   Dx, Dy, k, opts, object_mean_uv_map)
 %------------------------------------------------------------------
-function [weights, wx_l, wy_l, past] = propagate_tao_weights( ...
+function [weights, wx_l, wy_l, past] = propagate_cvos_weights( ...
   weights_now, uvb, past, occb_mask, Dx, Dy, k, opts)
 
 %------------------------------------------------------------------

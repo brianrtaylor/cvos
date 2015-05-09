@@ -9,7 +9,7 @@
 %   * dsk
 %   * VIS
 %--------------------------------------------------------------------
-function [prob_fg] = tao_fg_prior(past, uvb, occb_mask, opts)
+function [prob_fg] = cvos_fg_prior(past, uvb, occb_mask, opts)
 v2struct(opts);
 ERODE_SZ = 3.0;
 g_tiny = fspecial('gaussian', 5, 1);

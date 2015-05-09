@@ -1,10 +1,10 @@
 %--------------------------------------------------------------------
-% make_tao_constraint_weights
+% make_cvos_constraint_weights
 %
 % @param: opts : contains useful options
 %   * relative_weights_uno_constraints : weights between intensity and flow 
 %--------------------------------------------------------------------
-function [constraints, constraint_weights, constraints_img] = make_tao_unary_constraint_weights( ...
+function [constraints, constraint_weights, constraints_img] = make_cvos_unary_constraint_weights( ...
   constraints_in, constraint_weights_in, uvf, uvf_rev, I1, I2, opts)
 
 % settings

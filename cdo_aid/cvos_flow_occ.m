@@ -1,5 +1,5 @@
 %----------------------------------------------------------------------
-% tao_flow_occ
+% cvos_flow_occ
 % 
 % @param: uvpath, uvNameStr, seq, k, opts
 % @param: opts : struct with followin info
@@ -11,7 +11,11 @@
 %
 % @param: TODO: past : load old data (from prior frames) or compute new here
 %----------------------------------------------------------------------
-function [uvb, uvb_cbf, uvf, uvf_cbf, uvb_rev, uvf_rev, occb, occb_cbf, occb_cbf_prob, occf, occf_cbf, occf_cbf_prob, occb_rev, occf_rev, occb_rev_prob, occf_rev_prob] = tao_flow_occ(uvpath, flow_files, seq, k, T, i0, i1, i2, I0, I1, I2, past, opts)
+function [uvb, uvb_cbf, uvf, uvf_cbf, uvb_rev, uvf_rev, ...
+            occb, occb_cbf, occb_cbf_prob, ...
+            occf, occf_cbf, occf_cbf_prob, ...
+            occb_rev, occf_rev, occb_rev_prob, occf_rev_prob] = ...
+            cvos_flow_occ(uvpath, flow_files, seq, k, T, i0, i1, i2, I0, I1, I2, past, opts)
 DO_CROSSBILATERALFILTERFLOW = false;
 v2struct(opts);
 num_files = length(flow_files);
