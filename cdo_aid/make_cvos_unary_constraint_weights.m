@@ -16,14 +16,14 @@ weights = relative_constraints_uno_weights ...
   / sum(relative_constraints_uno_weights);
 
 % input
-[rows, cols, chan] = size(I1); 
+[rows, cols] = size(I1); 
 imsize = [rows, cols];
 
 % intensity change between I1, I1
-I1_ = reshape(I1, [numel(I1)/3, 3]);
-I2_ = reshape(I2, [numel(I2)/3, 3]);
-uvf_ = reshape(uvf, [numel(uvf)/2, 2]);
-uvf_rev_ = reshape(uvf_rev, [numel(uvf_rev)/2, 2]);
+% I1_ = reshape(I1, [numel(I1)/3, 3]);
+% I2_ = reshape(I2, [numel(I2)/3, 3]);
+% uvf_ = reshape(uvf, [numel(uvf)/2, 2]);
+% uvf_rev_ = reshape(uvf_rev, [numel(uvf_rev)/2, 2]);
 % idx = sub2ind(constrains_in, [rows, cols]);
 idx = constraints_in;
 
@@ -55,14 +55,14 @@ end
 
 % visuals and output
 constraints_img = zeros(imsize);
-constraints_img_in = zeros(imsize);
-constraints_img_mod = zeros(imsize);
+% constraints_img_in = zeros(imsize);
+% constraints_img_mod = zeros(imsize);
 
 [constraints, constraint_weights] = aggregate_list( ...
   constraints, constraint_weights, false);
 constraints_img(constraints)      = constraint_weights;
-constraints_img_in(constraints)   = constraint_weights_in;
-constraints_img_mod(constraints)  = constraint_weights_mod;
+% constraints_img_in(constraints)   = constraint_weights_in;
+% constraints_img_mod(constraints)  = constraint_weights_mod;
 
 % fig(901); imagesc([constraints_img_in, constraints_img_mod, constraints_img]);
 end
