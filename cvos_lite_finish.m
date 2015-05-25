@@ -1,13 +1,5 @@
-%----------------------------------------------------------------------------%
-% cdov_lite_finish(params, ADD, k)
-%
-% causal detachable objects for a single frame (i.e. first and last frames)
-%
-% @note: so far just does the last frame lol
-%----------------------------------------------------------------------------%
-function cdov_lite_finish(params, ADD, k)
-setup;
-
+%-------------------------------------------------------------------------%
+function cvos_lite_finish(params, ADD, k)
 %------------------------------------------------------------------
 % setup
 %------------------------------------------------------------------
@@ -29,9 +21,6 @@ objects         = ADD.objects;
 object_map      = ADD.object_map;
 problem         = ADD.problem;
 FINISH          = ADD.FINISH;
-
-object_mean_uvf_map     = ADD.object_mean_uvf_map;
-% object_mean_uvf_map_t0  = ADD.object_mean_uvf_map_t0;
 
 opts_flow_occ               = ADD.opts_flow_occ;
 opts_current_weights        = ADD.opts_current_weights;
@@ -56,7 +45,6 @@ if (size(I1,3)==1), I1 = repmat(I1,[1 1 3]); end;
 if (size(I0,3)==1), I0 = repmat(I0,[1 1 3]); end;
 [rows, cols, ~] = size(I1);
 imsize = [rows, cols];
-uvsize = [rows, cols, 2];
 rgbsize = [rows, cols, 3];
 i1 = im2double(rgb2gray(I1));
 i0 = im2double(rgb2gray(I0));
@@ -76,30 +64,16 @@ EdgeDollar = 0.75*(1-E);
 %------------------------------------------------------------------
 % some structures setup
 %------------------------------------------------------------------
-% past.uvf      = zeros(uvsize);
-% past.uvf_rev  = zeros(uvsize);
-% past.occf     = zeros(imsize);
-% past.occf_rev = zeros(imsize);
-
 unary_constraints_map = zeros(imsize);
 
 %------------------------------------------------------------------
-% tao_flow_occ: flow + occlusions + pre-processing
+% cvos_flow_occ: flow + occlusions + pre-processing
 %------------------------------------------------------------------
 [uvb, uvb_cbf, uvf, uvf_cbf, uvb_rev, uvf_rev, ...
   occb, occb_cbf, occb_cbf_prob, occf, occf_cbf, occf_cbf_prob, ...
   ~, ~, occb_rev_prob, occf_rev_prob] = ...
-  tao_flow_occ(flow_path, flow_files, seq, k, FINISH, ...
+  cvos_flow_occ(flow_path, flow_files, seq, k, FINISH, ...
   i0, i1, i2, I0, I1, I2, past, opts_flow_occ);
-
-% % % if (k > FINISH);
-% % %   tmp = uvf; uvf = uvb; uvb = tmp; % swap uvb, uvf
-% % %   tmp = uvf_cbf; uvf_cbf = uvb_cbf; uvb_cbf = tmp;
-% % %   tmp = uvf_rev; uvf_rev = uvb_rev; uvb_rev = tmp;
-% % %   tmp = occf_cbf; occf_cbf = occb_cbf; occb_cbf = tmp;
-% % %   tmp = occf_cbf_prob; occf_cbf_prob = occb_cbf_prob; occb_cbf_prob = tmp;
-% % %   tmp = occf_rev_prob; occf_rev_prob = occb_rev_prob; occb_rev_prob = tmp; 
-% % % end
 
 uvf_bflt = double(uvf); % 0
 uvf_cbf_bflt = double(uvf); % 0
@@ -113,70 +87,44 @@ uvb_rev_bflt = recursive_bf_mex(double(uvb_rev), 0.05, 0.004, 0, 10);
 occb_mask = occb_cbf_prob > params.OCCPROBLAYERTHRESH;
 % put into the frame 1 reference frame
 layers_t0 = round(utils_warp_image(past.layers, uvb_cbf_bflt)); % warp back
-[past.t0.layers, layers_t0_msfm] = remove_occb_mask( ...
+[past.t0.layers, ~] = remove_occb_mask( ...
   layers_t0, occb_mask, 0, 0); % past = t+1 lol
 
-[boxes, prob_box_fg, prob_box_bg, count_box_fg, count_box_bg, ...
-  weights_box] = tao_get_prob_from_boxes( ...
+[boxes, prob_box_fg, ~, count_box_fg, ~, weights_box] = cvos_get_prob_from_boxes( ...
   occb_mask, past, i1_bflt, boxes, opts_boxes);
 
 %------------------------------------------------------------------
 % constraints now
 %------------------------------------------------------------------
-[constraints_now_b, constraint_weights_now_b, indbad_now_b] ...
-  = make_tao_constraints(occb_cbf_prob, uvb_cbf_bflt, uvb_rev_bflt, ...
+[constraints_now_b, constraint_weights_now_b] ...
+  = make_cvos_constraints(occb_cbf_prob, uvb_cbf_bflt, uvb_rev_bflt, ...
   params.OCCPROB, params.MINCONSTRAINTDIST, params.VIS, 16);
-% % [constraints_now_f, constraint_weights_now_f, indbad_now_f] ...
-% %   = make_tao_constraints(occf_cbf_prob, uvf_cbf_bflt, uvf_rev_bflt, ...
-% %   params.OCCPROB, params.MINCONSTRAINTDIST, params.VIS, 17);
-% [constraints_now_f, constraint_weights_now_f, indbad_now_f] = deal([], [], []);
-
-% % if params.UNARYOCC;
-% %   [constraints_uno_now_f, constraint_weights_uno_now_f, indbad_uno_now_f, ...
-% %     constraints_uno_img_now_f] = make_tao_unary_constraints( ...
-% %     occf_cbf_prob, uvf_cbf, params.OCCPROB);
-% % end
 
 %------------------------------------------------------------------
 % weights now
 %------------------------------------------------------------------
-[weights_now, weights_inds] = make_tao_weights_current_frame( ...
+[weights_now, weights_inds] = make_cvos_weights_current_frame( ...
   Ilab, uvb_cbf_bflt, uvf_cbf_bflt, dx_inds, dy_inds, ...
   EdgeDollar, opts_current_weights);
 
-% % if params.BOXHELP && ~isempty(boxes);
-% %   weights_now = (1 - params.BOXTVWEIGHT) * weights_now ...
-% %     + max(0.0, params.BOXTVWEIGHT * weights_boxes);
-% % end
-  
 %------------------------------------------------------------------
 % constraints weights now
 %
 % TODO: replace I1_bflt with Ilab
 %------------------------------------------------------------------
 [constraints_now_b, constraint_weights_now_b, ...
-  constraint_weights_now_nodiv_b] = make_tao_constraint_weights( ...
+  constraint_weights_now_nodiv_b] = make_cvos_constraint_weights( ...
   constraints_now_b, constraint_weights_now_b, -uvb_cbf_bflt, uvb_cbf_bflt, ...
   I1_bflt, weights_now, EdgeDollar, opts_constraint_weights, 18);
-% % [constraints_now_f, constraint_weights_now_f, ...
-% %   constraint_weights_now_nodiv_f] = make_tao_constraint_weights( ...
-% %   constraints_now_f, constraint_weights_now_f, uvb_bflt, uvf_cbf_bflt, ...
-% %   I1_bflt, weights_now, EdgeDollar, opts_constraint_weights, 19);
+
 [constraints_now_f, constraint_weights_now_f, ...
   constraint_weights_now_nodiv_f] = deal([], [], []);
 
-% % if params.UNARYOCC;
-% %   [constraints_uno_now_f, constraint_weights_uno_now_f, ...
-% %     constraints_uno_img_now_f] = make_tao_unary_constraint_weights( ...
-% %     constraints_uno_now_f, constraint_weights_uno_now_f, ...
-% %     uvf, uvf_rev, I1, I2, opts_constraint_weights);
-% % end
-  
 %------------------------------------------------------------------
 % weights from prior frame (future)
 %------------------------------------------------------------------
 if ~isempty(past.weights) && params.CAUSAL && params.WEIGHTHELP;
-  [weights, wx_l, wy_l, past] = propagate_tao_weights( ...
+  [weights, wx_l, wy_l, past] = propagate_cvos_weights( ...
     weights_now, uvb_cbf_bflt, past, occb_mask, ...
     Dx, Dy, k, opts_propagate);
 else
@@ -188,7 +136,7 @@ end
 %---------------------------------------------------------------------
 if ~isempty(past.unity) && params.UNITYHELP && params.CAUSAL ...
   && params.PROB_UNITY > 0;
-  unity = tao_unity_prior(past, uvb_bflt, uvb_cbf_bflt, ...
+  unity = cvos_unity_prior(past, uvb_bflt, uvb_cbf_bflt, ...
     wx_l, wy_l, occb_mask, k, opts_unity);
 else
   unity = zeros([rows, cols, 2]);
@@ -204,7 +152,7 @@ if ~exist('count_box_fg', 'var'); count_box_fg = []; end;
 
 if ~isempty(past.constraints_b) && params.CAUSAL && params.CONSTRAINTHELP;
   [constraints_b, constraint_weights_b, constraints_causal_b, ...
-    constraint_weights_old_b, valid_b] = propagate_tao_constraint_weights( ...
+    constraint_weights_old_b] = propagate_cvos_constraint_weights( ...
     I0_bflt, I1_bflt, i1_bflt, uvb_cbf_bflt, -uvb_cbf_bflt, past, ...
     past.constraints_b, past.constraint_weights_b, past.weights, ...
     weights, past.xi_b, EdgeDollar, constraints_now_b, ...
@@ -219,7 +167,7 @@ end
 
 if ~isempty(past.constraints_f) && params.CAUSAL && params.CONSTRAINTHELP;
   [constraints_f, constraint_weights_f, constraints_causal_f, ...
-    constraint_weights_old_f, valid_f] = propagate_tao_constraint_weights( ...
+    constraint_weights_old_f] = propagate_cvos_constraint_weights( ...
     I0_bflt, I1_bflt, i1_bflt, -uvb_bflt, uvb_bflt, past, ...
     past.constraints_f, past.constraint_weights_f, past.weights, ...
     weights, past.xi_f, EdgeDollar, constraints_now_f, ...
@@ -255,7 +203,7 @@ end
 % Block that introduces a ``layer-driven foreground prior''
 %---------------------------------------------------------------------
 if ~isempty(past.prob_fg) && params.CAUSAL && params.PROB_FG > 0;
-  prob_fg = tao_fg_prior(past, uvb_cbf_bflt, occb_mask, opts_fg);
+  prob_fg = cvos_fg_prior(past, uvb_cbf_bflt, occb_mask, opts_fg);
 else
   prob_fg = zeros(imsize);
 end
@@ -391,16 +339,14 @@ layers = reshape(double(layers), imsize);
 toc;
 
 %------------------------------------------------------------------------
-% TODO: filter the layers
-%------------------------------------------------------------------------
 layers = postfilter_layers(layers, i1_bflt, 0.5);
 %------------------------------------------------------------------------
  
 %------------------------------------------------------------------------
 % objects
 %------------------------------------------------------------------------
-[object_map_snap, last_obj_id] = layers_to_detachable_objects(layers);
-[objects_out, object_map_out] = tao_update_objects( ...
+[object_map_snap] = layers_to_detachable_objects(layers);
+[objects_out, object_map_out] = cvos_update_objects( ...
   objects, object_map, object_map_snap, uvb_bflt, uvf_bflt);
 
 objects = objects_out;
@@ -409,7 +355,7 @@ object_map = object_map_out;
 %------------------------------------------------------------------------
 % visualization & output
 %------------------------------------------------------------------------
-tao_visual(layers, ...
+cvos_visual(layers, ...
   constraints_causal_b, constraints_causal_f, constraint_weights_old_b, ...
   constraint_weights_old_f, constraints_now_b, constraints_now_f, ...
   constraint_weights_now_nodiv_b, constraint_weights_now_nodiv_f, ...

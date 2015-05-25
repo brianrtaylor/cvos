@@ -24,14 +24,14 @@ v = xy_occr - xy_occd;
 uv_mag_occr_squared = ux(constraints(:,1)).^2 + uy(constraints(:,1)).^2;
 uv_mag_occr = sqrt(uv_mag_occr_squared);
 uv_mag_occr_avg = mean(uv_mag_occr(:));
-% w_uv = exp( -uv_mag_occr / max(sqrt(SAFESPEEDSQUARED), uv_mag_occr_avg) );
 w_uv = exp( -uv_mag_occr / max(sqrt(SAFESPEEDSQUARED), (uv_mag_occr_avg / 2.0)) );
 
-% warp occluder:
+% warp occluder
 x1_ = X(constraints(:,1)) + ux(constraints(:,1));
 y1_ = Y(constraints(:,1)) + uy(constraints(:,1));
 x2_ = x1_ - v(:,1);
-y2_ = y1_ - v(:,2);    
+y2_ = y1_ - v(:,2);
+
 % round everything
 x1_ = round(x1_); x2_ = round(x2_);
 y1_ = round(y1_); y2_ = round(y2_);

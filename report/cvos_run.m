@@ -38,7 +38,6 @@ PKG.VIS = 499; % parameter to determine how much visualization is displayed
 
 % weights / parameters:
 PKG.TAU1 = 5e-4;
-PKG.TAU2 = 0.5;
 PKG.LAMBDA = 0.5;
 PKG.PAIR = 1.0;
 
@@ -67,46 +66,19 @@ PKG.DO_UNITY_WARP_WEIGHT = true;
 PKG.UNITYHELP = true;
 PKG.PROB_UNITY = 0.5; % dunno where this is used lol
 
-PKG.POST_PERTURB = false;
 PKG.CAUSAL = 1;
 PKG.DO_FORBACKCAUSAL = false;
 
+PKG.TEST = true;
+
 if strcmp(model, 'fullboxfig');
-  PKG.TEST = true;
   PKG.DO_FORBACKCAUSAL = false;
   outpath = fullfile(plotbase, 'cvos-r1.0-fullboxfig');
-elseif strcmp(model, 'fullbg');
-  PKG.PROB_BG = 0.001;
-  outpath = fullfile(plotbase, 'cvos-r1.0-fullbg');
-elseif strcmp(model, 'fullnobox'); % full but no local shape classifiers
-  PKG.BOXHELP = false;
-  outpath = fullfile(plotbase, 'cvos-r1.0-fullnobox');
-elseif strcmp(model, 'fullnop'); % full but no constraint perturbation 
-  PKG.DO_CONS_PERTURB = false;
-  PKG.DO_CONS_NOW_PERTURB = false;
-  outpath = fullfile(plotbase, 'cvos-r1.0-fullnop');
-elseif strcmp(model, 'fullnopcbf'); % full but no constraint perturbation 
+elseif strcmp(model, 'fullnopcbf'); % full but no flow extrapolation
   PKG.DO_CROSSBILATERALFILTERFLOW = false; % CHANGE NEW EXPERIMENTS 20150328
   PKG.DO_CONS_PERTURB = false;
   PKG.DO_CONS_NOW_PERTURB = false;
   outpath = fullfile(plotbase, 'wcr-cvos-r1.0-fullnopcbf');
-elseif strcmp(model, 'fullpnocbf'); % full but no constraint perturbation 
-  PKG.DO_CROSSBILATERALFILTERFLOW = false; % CHANGE NEW EXPERIMENTS 20150328
-  outpath = fullfile(plotbase, 'wcr-cvos-r1.0-fullpnocbf');
-elseif strcmp(model, 'fullcbfnop'); % full but no constraint perturbation 
-  PKG.DO_CROSSBILATERALFILTERFLOW = false; % CHANGE NEW EXPERIMENTS 20150328
-  outpath = fullfile(plotbase, 'wcr-cvos-r1.0-fullcbfnop');
-elseif strcmp(model, 'fxfnocbf');
-  PKG.CAUSAL = false;
-  PKG.WEIGHTSHELP = false; % should be set not to help, but just in case
-  PKG.UNITYHELP = false; % should be set not to help, but just in case
-  PKG.BOXHELP = false; % should be set not to help, but just in case
-  PKG.PROB_FG = 0; % should be set not to help, but just in case
-  PKG.DO_CONS_PERTURB = false; % not necessary but just in case
-  PKG.DO_CONS_NOW_PERTURB = false;
-  PKG.DO_FORBACKCAUSAL = false;
-  PKG.DO_CROSSBILATERALFILTERFLOW = false; % CHANGE FOR NEW EXPERIMENTS 20150323
-  outpath = fullfile(plotbase, 'wcr-cvos-r1.0-fxfnocbf'); % fxf
 elseif strcmp(model, 'fxf');
   PKG.CAUSAL = false;
   PKG.WEIGHTSHELP = false; % should be set not to help, but just in case
@@ -160,16 +132,9 @@ end
 %----------------------------------------------------------------------------
 for sid = seqs;
   s = num2str(sid{1});
-  % try
-    fprintf('========= running seq: %s ==============\n', s);
-    unix(sprintf('touch ./%s.running', s));
-    cvos(sid{1}, PKG);
-    unix(sprintf('rm ./%s.running', s));
-    fprintf('========= finished seq: %s =============\n', s);
-  % catch e
-  %   fprintf('========= failed seq: %s ===============\n', s);
-  %   e
-  % end
+  fprintf('========= running seq: %s ==============\n', s);
+  cvos(sid{1}, PKG);
+  fprintf('========= finished seq: %s =============\n', s);
 end
 exit
 end

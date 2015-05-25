@@ -1,5 +1,5 @@
 %-------------------------------------------------------------------------
-% tao_update_objects
+% cvos_update_objects
 %
 % % @param: objects : structure array of objects
 % @param: object_map : image of object labels obtained from 
@@ -9,15 +9,10 @@
 % @note: object representation
 % * id : id of object
 % * u, v : average motion of the object
-%
-%
-% @problem: what if we have objects, they disappear later, and then lastly
-% we get objects again. what will happen? --> they become different objects
 %-------------------------------------------------------------------------
-function [objects_out, object_map_out, n_active] = tao_update_objects( ...
+function [objects_out, object_map_out, n_active] = cvos_update_objects( ...
   objects, object_map, object_map_snap, uvb_warp, uvf)
 nnewobjects = max(object_map_snap(:));
-% nobjects = length(objects);
 
 ids_alive_objects = vec(unique(object_map(:)));
 if ids_alive_objects(1) == 0; ids_alive_objects(1) = []; end;
@@ -40,7 +35,7 @@ object_map_out = zeros(imsize, 'single');
 %-------------------------------------------------------------------------
 % for each object in object_map_snap, attach object or create new one
 %-------------------------------------------------------------------------
-ids = []; max_id = 0;
+max_id = 0;
 if ~isempty(objects);
   ids = cat(1, objects.id); max_id = max(ids);
 end
@@ -56,7 +51,6 @@ ids_still_alive_objects = []; n_still_alive_objects = 0;
 for k = 1:nnewobjects;
   % 1. assign an object to this snap_object or create a new object for it
   snap_mask = object_map_snap == k;
-  npx = sum(snap_mask(:));
   
   % find object with greatest overlap
   f1max = -1.0;
@@ -84,14 +78,11 @@ for k = 1:nnewobjects;
 
     ids_new = cat(1, ids_new, snap_id);
     nadd = nadd + 1;
-    % ids = cat(1, ids, snap_id);
-    % ids_alive_objects_t0 = cat(1, ids_alive_objects_t0, snap_id);
   end
 
   % fill in object into output object map
   object_map_out(snap_mask) = snap_id;
 end
-% nobjects = nobjects + nadd;
 ids_alive_objects_t0 = cat(1, ids_alive_objects, ids_new);
 n_alive_objects_t0 = n_alive_objects + nadd;
 
@@ -111,7 +102,6 @@ for j = 1:n_alive_objects_t0;
       snap_id = max_id + 1;
       max_id = snap_id;
       nadd = nadd + 1;
-      % ids = cat(1, ids, snap_id);
       ids_new = cat(1, ids_new, snap_id);
       object_map_to_add(L == jj) = snap_id;
     end
@@ -129,8 +119,6 @@ n_spawn_objects = n_spawn_objects + nadd;
 % update flow for persisting objects
 if n_still_alive_objects > 0;
   ids = cat(1, objects.id);
-  % 1. get indices
-  % TODO: can make this faster
   for j = 1:n_still_alive_objects;
     ind_objects = find(ids == ids_still_alive_objects(j));
 

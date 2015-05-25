@@ -9,7 +9,7 @@
 %   * dsk
 %   * VIS
 %--------------------------------------------------------------------
-function [prob_fg] = tao_fg_prior(past, uvb, occb_mask, opts)
+function [prob_fg] = cvos_fg_prior(past, uvb, occb_mask, opts)
 v2struct(opts);
 ERODE_SZ = 3.0;
 g_tiny = fspecial('gaussian', 5, 1);
@@ -57,9 +57,6 @@ end
 % erode
 prob_fg = fg_warped_1;
 prob_fg( isnan(prob_fg ) ) = 0;
-
-% TODO: why does this erode so much? :/, perhaps we should use both warp_fg
-% techniques and remove a much smaller amount here.
 
 % erode edges based on flow magnitude in that region
 prob_fg_chk = imerode(prob_fg > 0.01, dsk);

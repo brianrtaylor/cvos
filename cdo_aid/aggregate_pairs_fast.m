@@ -29,7 +29,7 @@ unique_pairs = unique(pairs, 'rows');
 nunique_pairs = size(unique_pairs,1);
 
 [unique_pairs, score_pairs, ind_pairs] = ...
-            aggregate_pairs_loop_mex(pairs, unique_pairs, pair_weights, sorti );
+  aggregate_pairs_loop_mex(pairs, unique_pairs, pair_weights, sorti );
 fprintf('%s: number pruned edges: %d --> %d\n', mfilename, npairs, nunique_pairs);
 end
 

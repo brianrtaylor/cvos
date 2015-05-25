@@ -8,7 +8,6 @@ if ~exist('framerate', 'var'); framerate= 5; end;
 if ~exist('bitrate', 'var'); bitrate = framerate * 500; end;
 
 search_str = fullfile(imgpth, sprintf('%s_*_%s.png', seq, endname));
-% search_str = fullfile(imgpth, sprintf('%s_\d*_%s.png', seq, endname)); % doesn't work
 fs = dir(search_str);
 N = length(fs);
 ndigits = ceil(log10(N)) + 1;
@@ -25,7 +24,6 @@ cmd = sprintf('avconv -r %d -f image2 -i %s -b %dk %s', ...
 mvcmd = '';
 mvbackcmd = '';
 for k = 1:N;
-  % movefile(fs(k).name, fullfile(imgpth, sprintf(tmp_str, k))); % too slow
   name1 = fullfile(imgpth, fs(k).name);
   name2 = fullfile(imgpth, sprintf(tmp_str, k));
   mvcmd     = [mvcmd,     sprintf('mv %s %s; ', name1, name2)];

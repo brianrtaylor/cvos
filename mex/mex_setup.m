@@ -55,22 +55,18 @@ eval(cmd);
 fprintf('Compiling perturb_constraints_mex.cpp\n');
 cmd = sprintf('mex perturb_constraints_mex.cpp CXXFLAGS="-O -fPIC" gmm_utils.cpp');
 eval(cmd);
-% TODO(vasiliy): remove this after testing on multiple machines
-% cmd = sprintf('mex eval_gmm_bboxes_mex.cpp CXXFLAGS="-O -fPIC" gmm_utils.cpp');
-% eval(cmd);
-
+cmd = sprintf('mex eval_gmm_bboxes_mex.cpp CXXFLAGS="-O -fPIC" gmm_utils.cpp');
+eval(cmd);
 
 % compile other local MEX files:
 cppfiles = dir('*.cpp');
-for ii=1:length(cppfiles)
-    
+for ii=1:length(cppfiles)   
     if strcmpi(cppfiles(ii).name, 'pd_wrapper.cpp'), continue; end
     if strcmpi(cppfiles(ii).name, 'learn_constraint_gmm_mex.cpp'), continue; end
     if strcmpi(cppfiles(ii).name, 'learn_bbox_gmm_mex.cpp'), continue; end
     if strcmpi(cppfiles(ii).name, 'gmm_utils.cpp'), continue; end
     if strcmpi(cppfiles(ii).name, 'perturb_constraints_mex.cpp'), continue; end
-% TODO(vasiliy): REMOVE THIS AFTER TESTING ON MULTIPEL MACHIS
-%     if strcmpi(cppfiles(ii).name, 'eval_gmm_bboxes_mex.cpp'), continue; end
+    if strcmpi(cppfiles(ii).name, 'eval_gmm_bboxes_mex.cpp'), continue; end
 
     fprintf('Compiling: %s\n', cppfiles(ii).name);
     cmd = sprintf('mex %s', cppfiles(ii).name);

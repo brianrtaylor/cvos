@@ -1,5 +1,5 @@
 %----------------------------------------------------------------------
-% tao_flow_occ
+% cvos_flow_occ
 % 
 % @param: uvpath, uvNameStr, seq, k, opts
 % @param: opts : struct with followin info
@@ -11,7 +11,11 @@
 %
 % @param: TODO: past : load old data (from prior frames) or compute new here
 %----------------------------------------------------------------------
-function [uvb, uvb_cbf, uvf, uvf_cbf, uvb_rev, uvf_rev, occb, occb_cbf, occb_cbf_prob, occf, occf_cbf, occf_cbf_prob, occb_rev, occf_rev, occb_rev_prob, occf_rev_prob] = tao_flow_occ(uvpath, flow_files, seq, k, T, i0, i1, i2, I0, I1, I2, past, opts)
+function [uvb, uvb_cbf, uvf, uvf_cbf, uvb_rev, uvf_rev, ...
+            occb, occb_cbf, occb_cbf_prob, ...
+            occf, occf_cbf, occf_cbf_prob, ...
+            occb_rev, occf_rev, occb_rev_prob, occf_rev_prob] = ...
+            cvos_flow_occ(uvpath, flow_files, seq, k, T, i0, i1, i2, I0, I1, I2, past, opts)
 DO_CROSSBILATERALFILTERFLOW = false;
 v2struct(opts);
 num_files = length(flow_files);
@@ -145,25 +149,12 @@ if LOADFLOW;
     occb_cbf_prob = occb_prob;
     occf_cbf_prob(occf_cbf_prob < 0.900) = 0;
     occb_cbf_prob(occb_cbf_prob < 0.900) = 0;
-    
-    % if VIS < 150;
-    % fig(111); imagex([[uvb_cbf, uvf_cbf]; [uvb_rev, uvf_rev]]);
-    % title('cdo flow cube gt'); colorbar; drawnow;
-    % fig(112); imagesc([[occb_cbf_prob, occf_cbf_prob]; ...
-    %   [occb_cbf_prob, occf_cbf_prob] > params.OCCPROB]);
-    % title('cdo occ cube gt'); colorbar; drawnow;
-    % end
   else
-    % filter that flow
     if DO_CROSSBILATERALFILTERFLOW;
-      tic
       [uvb_cbf_, uvf_cbf_, occb_cbf_, occf_cbf_, occb_cbf_prob_, ...
         occf_cbf_prob_] = cross_bilateral_filter_step_test_fullimg( ...
         double(occb), double(occf), double(uvb), double(uvf), ...
         double(uvb_rev), double(uvf_rev), I0, I1, I2, m, VIS);
-      toc
-      
-      tic
       [uvb_cbf, uvf_cbf, occb_cbf, occf_cbf, occb_cbf_prob, ...
         occf_cbf_prob] = cross_bilateral_filter_step_test_occ( ...
         double(occb_cbf_prob_), double(occf_cbf_prob_), ...
@@ -171,7 +162,6 @@ if LOADFLOW;
         double(uvf), double(uvf_cbf_), ...
         double(occb_rev), double(occf_rev), ...
         double(uvb_rev), double(uvf_rev), I0, I1, I2, m, VIS);
-      toc
     else
       uvb_cbf = uvb;
       uvf_cbf = uvf;

@@ -6,7 +6,6 @@
 #include <cstring>
 #include <cmath>
 #include <vector>
-//#include "generic.h" // vlfeat
 #include "gmm.h" // vlfeat
 #include "cvos_common.h"
 
@@ -98,7 +97,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     int mx = (int) (xp[0] + 0.5);
     int r  = (int) (rp[0] + 0.5);
     int diam = 2 * r + 1;
-    // int numel_box = diam * diam;
 
     int cy = (int) MAT2C(my);
     int cx = (int) MAT2C(mx);
@@ -113,25 +111,15 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     int numel_box = ysz * xsz;
     size_t n = numel_box * 3;
 
-    // mexPrintf("box: %d %d %d %d - occr: %0.3f, occd: %0.3f\n", 
-    //   ymin, ymax, xmin, xmax, lay_occr[i], lay_occd[i]);
-    // mexPrintf("size of vector 1: %zu\n", n1);
-    // mexPrintf("size of vector 2: %zu\n", n2);
-
     vector<double> x1 = vector<double>(); // background
     vector<double> x2 = vector<double>(); // foreground
     x1.reserve(n); 
     x2.reserve(n);
 
-    // double* fg_mask = (double*) mxGetPr( mxGetField(boxes, i, "fg_mask"));
-    // double* bg_mask = (double*) mxGetPr( mxGetField(boxes, i, "bg_mask"));
     double* fg_prob = (double*) mxGetPr( mxGetField(boxes, i, "fg_prob"));
     double* bg_prob = (double*) mxGetPr( mxGetField(boxes, i, "bg_prob"));
     double* learn_mask = (double*) mxGetPr( mxGetField(boxes, i,
       "gmm_learn_colour_mask"));
-      
-    // double occr_layer_value = layers[linear_index(yy2, xx2, rows)];
-    // double occd_layer_value = layers[linear_index(yy1, xx1, rows)];
 
     for (int cc = xmin; cc <= xmax; ++cc) { 
       for (int rr = ymin; rr <= ymax; ++rr) { 
@@ -140,19 +128,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
         int brr = rr - cy + r;
         int bcc = cc - cx + r;
         int midx = linear_index(brr, bcc, diam); // looks in a full box
-        // int midxs = linear_index(midx, cc - xmin, npxmask);
-
-        // // if (fabs(layers[idx] - lay_occr[i]) < fabs(layers[idx] - lay_occd[i])) {
-        // if (fabs(layers[idx] - lay_occr[i]) <= 0.5) {
-        // if (fabs(layers[idx] - lay_occr[i]) <= 0.5) {
-        //   for (int u = 0; u < chan; ++u) {
-        //     x2.push_back( I0[ linear_index(rr,cc,u,rows,cols) ] );
-        //   }
-        // } else if (fabs(layers[idx] - lay_occd[i]) <= 0.5) {
-        //   for (int u = 0; u < chan; ++u) {
-        //     x1.push_back( I0[ linear_index(rr,cc,u,rows,cols) ] );
-        //   }
-        // }
 
         // occluder
         if ((fg_prob[midx] > PROB_FG_MASK_THRESH) && (learn_mask[midx] == 1)) {
