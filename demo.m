@@ -1,6 +1,7 @@
 % TODO: use better example than cars5 because we lose the right car
 % TODO: replace cvos_lite_* with some edits and calls to cvos straight out
-% TODO: change all names from tao to cvos
+% TODO: remove unnecessary stuff/steps in cross_bilateral_step_test... files (also shorten the name)
+% TODO: change name of tempsaving files (cars1_pdoresults_temporal_fg=...)
 % in frame 1
 
 % 1. download data somewhere local
