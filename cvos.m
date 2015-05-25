@@ -7,10 +7,6 @@
 %----------------------------------------------------------------------------%
 function [out, etc] = cvos(DATA, PKG)
 %----------------------------------------------------------------------------%
-% some startup + parameters
-%----------------------------------------------------------------------------%
-% setup;
-
 %----------------------------------------------------------------------------%
 % Settings
 %----------------------------------------------------------------------------%
@@ -21,8 +17,6 @@ BEGIN = 1;
 [seq, flow_path, img_path, ~, extension, flowtype] = dataPaths(DATA);
 files = dir([img_path '/*.' extension]);
 flow_files = dir([flow_path '/*.mat']);
-
-[files, ~] = purge_files(files, 'rsz'); % checks for rsz files
 
 T = length(files);
 I1 = imread(fullfile(img_path, files(BEGIN).name));
@@ -35,18 +29,17 @@ uvsize = [rows, cols, 2];
 i1 = im2double(rgb2gray(I1));
 i2 = im2double(rgb2gray(I2));
 
-%----------------------------------------------------------------------------%
+%--------------------------------------------------------------------------
 % algorithm settings
-%----------------------------------------------------------------------------%
+%--------------------------------------------------------------------------
 params = cvos_params_default();
-
 edge_model = load('modelFinal.mat');
 
-%==============================================================================
+%--------------------------------------------------------------------------
 % use this to overwrite any variables used in here before running
 % NOTE: all variables should be set above this point
 if exist('PKG','var') && isstruct(PKG); params = structmerge(params, PKG); end;
-%==============================================================================
+%--------------------------------------------------------------------------
 if ~isfield(params, 'TEST'); params.TEST = false; end;
 
 if params.DO_FORBACKCAUSAL;
@@ -62,27 +55,17 @@ FXF = ~isempty(FXF) && FXF == 1;
 %--------------------------------------------------------------------------
 if exist('params', 'var') && isfield(params, 'outpath');
   outpath = params.outpath;
-else
-  outpath = ['/plot/vasiliy/CVPR15/results/', seq];
-%   error('don''t use vasiliy''s paths for now\n');
-%   return;
 end
-
-% add sequence name to outpath
 outpath = [outpath, '/', seq];
-
 if ~exist(outpath,'dir'), mkdir(outpath); end;
 
-% vasiliy
 out_fname = sprintf(['%s/%s_results_temporal_fg' ...
-  '=%4.3f_%s_%f_%f_%f_%f.mat'], outpath, seq, ...
+  '=%4.3f_%s_%f_%f_%f.mat'], outpath, seq, ...
   params.PROB_FG, utils_clockstring(), ...
-  params.TAU1, params.TAU2, params.PAIR, params.LAMBDA);
-
-% btay
+  params.TAU1, params.PAIR, params.LAMBDA);
 out_fname2 = sprintf(['%s/%s_cvosresults_temporal_fg' ...
-  '=%4.3f_%f_%f_%f_%f.mat'], outpath, seq, ...
-  params.PROB_FG, params.TAU1, params.TAU2, params.PAIR, params.LAMBDA);
+  '=%4.3f_%f_%f_%f.mat'], outpath, seq, ...
+  params.PROB_FG, params.TAU1, params.PAIR, params.LAMBDA);
 out_working_fname2 = [out_fname2, '.running'];
 unix(sprintf('touch %s', out_working_fname2));
 
@@ -137,8 +120,6 @@ past.constraint_weights_f = [];
 past.constraints_causal_f = [];
 past.constraint_weights_causal_f = [];
 
-past.unary_constraints_map = zeros(imsize);
-
 past.weights = [];
 past.constraints = [];
 past.constraint_weights = [];
@@ -158,56 +139,12 @@ past.t0.layers = [];
 past.t0.weights = [];
 
 %-----------------------------------------------------------------------
-% some data structures of handiness
+% adding to params struct
 %-----------------------------------------------------------------------
-opts_current_weights = structsubset(params, 'SIGMOID_MEAN', ...
-  'SIGMOID_SCALE', 'relative_weights', 'relative_weights_constraints', ...
-  'DIVFLAG', 'FERRARIFLAG', 'LOCALFLOWADJUST', 'LOCALFLOWWEIGHTADJUST', ...
-  'WEIGHT_MAG_THRESHOLD', 'THETA', 'MINWUV', 'MAXUVADJUSTPROPORTION', ...
-  'WEIGHTS_LOW_CUTOFF', 'VIS', 'WARP_SAFESPEEDSQUARED');
-opts_current_weights.edge_model = edge_model;
-
-opts_propagate = structsubset(params, ...
-  'DO_CONS_PERTURB', 'relative_weights', 'relative_weights_constraints', ... 
-  'WEIGHT_MEMORY_FACTOR', 'DO_WEIGHT_WARP_WEIGHT', 'CAUSAL', 'VIS', ...
-  'TV_MEMORY_FACTOR', 'RUNNING_TV_PRIOR', 'dsk');
-
-opts_propagate_constraints = structsubset(params, ...
-  'DO_CONS_PERTURB', 'relative_weights_constraints', 'CAUSAL', 'VIS', ...
-  'CONSTRAINT_INSIDE_FG_MEMORY_FACTOR', 'CONSTRAINT_MEMORY_FACTOR', ...
-  'CONSTRAINT_WEIGHT_THRESH', 'DO_RECOMPUTE_OLD_WEIGHTS_IN_CURRENT_FRAME', ...
-  'DO_CONSTRAINT_WARP_WEIGHT', 'DO_CONS_NOW_PERTURB', ...
-  'WARP_SAFESPEEDSQUARED', 'CONS_PERTURB', 'DO_CONSTRAINT_DIVWEIGHT', ...
-  'relative_weights_constraints', 'DO_CONSTRAINT_WEIGHT_SIGMOID', ...
-  'SIGMOID_MEAN', 'SIGMOID_SCALE', 'DO_CONSTRAINT_OBJECT_WARP_WEIGHT');
 GMMPKG = struct;
 GMMPKG.cons_perturb = params.CONS_PERTURB;
-opts_propagate_constraints.GMMPKG = GMMPKG;
-
-opts_unary = structsubset(params, 'UNARY_CONSTRAINT_MEMORY_FACTOR', ...
-  'DO_UNARY_CONSTRAINT_WARP_WEIGHT', 'VIS', 'WARP_SAFESPEEDSQUARED');
-
-opts_flow_occ = structsubset(params, 'LOADFLOW', 'VIS', 'OCCPROB', ...
-  'DO_CROSSBILATERALFILTERFLOW', 'm', 'OCCMETHOD', 'CAUSAL', ...
-  'DIV_UV_THRESHOLD', 'DO_FORBACKCAUSAL');
-
-
-opts_constraint_weights = structsubset(params, 'DO_CONS_NOW_PERTURB', ...
-  'CONS_PERTURB', 'DO_CONSTRAINT_DIVWEIGHT', 'relative_weights_constraints', ...
-  'DO_CONSTRAINT_WEIGHT_SIGMOID', 'SIGMOID_MEAN', 'SIGMOID_SCALE', 'VIS');
-
-opts_fg = structsubset(params, ...
-  'OCC_INSIDE_FG_MEMORY_FACTOR', 'DO_FOREGROUND_WARP_WEIGHT', 'VIS', 'dsk', ...
-  'FG_MEMORY_FACTOR', 'CAUSAL', 'PROB_FG');
-
-opts_unity = structsubset(params, ...
-  'OCC_INSIDE_UNITY_MEMORY_FACTOR', 'DO_UNITY_WARP_WEIGHT', 'VIS', 'dsk', ...
-  'UNITY_MEMORY_FACTOR', 'CAUSAL', 'PROB_UNITY');
-
-opts_boxes = structsubset(params, 'CAUSAL', 'BOXHELP', 'VIS', 'BOX_RAD');
-
-opts_box_models = structsubset(params, 'CAUSAL', 'BOXHELP', 'VIS', ...
-  'CONS_PERTURB', 'BOX_RAD');
+params.GMMPKG = GMMPKG;
+params.edge_model = edge_model;
 
 %-----------------------------------------------------------------------
 % problem setup
@@ -215,7 +152,6 @@ opts_box_models = structsubset(params, 'CAUSAL', 'BOXHELP', 'VIS', ...
 problem = struct;
 problem.sigma_c = 0.90/sqrt(8.0);
 problem.sigma_y = 0.90/sqrt(8.0);
-problem.tau2 = params.TAU2;
 problem.max_iterations = 8000;
 problem.verbosity = 5000;
 problem.fx_tolerance = 0;
@@ -235,9 +171,6 @@ problem.tau1 = params.TAU1 * ones(problem.nnodes, 1);
 
 % using boxes for segmentation
 boxes = [];
-
-% unary occlusions term
-unary_constraints_map = zeros(imsize);
 
 I1lab = [];
 object_map = zeros(imsize);
@@ -275,8 +208,8 @@ if params.CAUSAL && ~FXF;
       I1lab = vl_xyz2lab(vl_rgb2xyz(uint8(I1_bflt)));
     catch e
       fprintf('%s: something wrong with saved file, should remove\n');
-      % fprintf('  %s\n\n', e);
-      % keyboard;
+      display(e);
+      return
     end
   end
 end
@@ -306,7 +239,6 @@ for k = BEGIN:FINISH;
       if (size(I2,3)==1), I2 = repmat(I2,[1 1 3]); end;
       i1 = im2double(rgb2gray(I1));
       i2 = im2double(rgb2gray(I2));
-      I1_bflt = recursive_bf_mex(I1, 0.01, 0.1, 1, 5);
     end
    
     % since we have prior frame setup correctly
@@ -341,23 +273,19 @@ for k = BEGIN:FINISH;
   %------------------------------------------------------------------
   a = tic();
   [uvb, uvb_cbf, uvf, uvf_cbf, uvb_rev, uvf_rev, ...
-    occb, occb_cbf, occb_cbf_prob, occf, occf_cbf, occf_cbf_prob, ...
-    ~, occf_rev, occb_rev_prob, occf_rev_prob] = ...
+    ~, occb_cbf, occb_cbf_prob, ~, occf_cbf, occf_cbf_prob, ~, occf_rev] = ...
     cvos_flow_occ(flow_path, flow_files, seq, k, T, ...
-    i0, i1, i2, I0, I1, I2, past, opts_flow_occ);
+    i0, i1, i2, I0, I1, I2, past, params);
   
   t_flowocc_cbf = toc(a);
   fprintf('C: calc flow and occlusions (cbf): %0.3f\n', t_flowocc_cbf);
   a = tic();
-  
-  % TODO: check if I should do this on uvf_cbf;
+
   uvf_bflt = recursive_bf_mex(double(uvf), 0.05, 0.004, 0, 10);
   uvb_bflt = recursive_bf_mex(double(uvb), 0.05, 0.004, 0, 10);
   uvf_cbf_bflt = recursive_bf_mex(double(uvf_cbf), 0.05, 0.004, 0, 10);
   uvb_cbf_bflt = recursive_bf_mex(double(uvb_cbf), 0.05, 0.004, 0, 10);
   uvf_rev_bflt = recursive_bf_mex(double(uvf_rev), 0.05, 0.004, 0, 10);
-  
-  % can prevent repeated computation here
   uvb_rev_bflt = recursive_bf_mex(double(uvb_rev), 0.05, 0.004, 0, 10);
   
   t_flowocc_bf = toc(a);
@@ -386,8 +314,8 @@ for k = BEGIN:FINISH;
   
   if ~isempty(past.layers) && params.CAUSAL;
     fprintf('C: computing local shape classifiers.\n');  
-    [boxes, prob_box_fg, ~, count_box_fg, ~, weights_box] = cvos_get_prob_from_boxes( ...
-      occb_mask, past, I1lab, boxes, opts_boxes); % i1_bflt
+    [boxes, prob_box_fg, ~, ~, ~, weights_box] = cvos_get_prob_from_boxes( ...
+      occb_mask, past, I1lab, boxes, params);
   end
   
   t_box_probs = toc(a);
@@ -415,22 +343,20 @@ for k = BEGIN:FINISH;
   
   [weights_now, weights_inds] = make_cvos_weights_current_frame( ...
     I1lab, uvb_cbf_bflt, uvf_cbf_bflt, dx_inds, dy_inds, ...
-    EdgeDollar, opts_current_weights);
+    EdgeDollar, params);
   
   t_weights_now = toc(a);
   fprintf('C: weights now: %0.3f\n', t_weights_now);  
   
   %------------------------------------------------------------------
   % constraints weights now
-  % 
-  % TODO: replace I1_bflt with Ilab
   %------------------------------------------------------------------
   a = tic();
   if ~isempty(constraints_now_b);
     [constraints_now_b, constraint_weights_now_b, ...
       constraint_weights_now_nodiv_b] = make_cvos_constraint_weights( ...
       constraints_now_b, constraint_weights_now_b, uvf_bflt, uvb_cbf_bflt, ...
-      I1lab, weights_now, EdgeDollar, opts_constraint_weights, 18);
+      I1lab, weights_now, EdgeDollar, params, 18);
   else
     constraint_weights_now_nodiv_b = [];
   end
@@ -439,7 +365,7 @@ for k = BEGIN:FINISH;
     [constraints_now_f, constraint_weights_now_f, ...
       constraint_weights_now_nodiv_f] = make_cvos_constraint_weights( ...
       constraints_now_f, constraint_weights_now_f, uvb_bflt, uvf_cbf_bflt, ...
-      I1lab, weights_now, EdgeDollar, opts_constraint_weights, 19);
+      I1lab, weights_now, EdgeDollar, params, 19);
   else
     constraint_weights_now_nodiv_f = [];
   end
@@ -455,7 +381,7 @@ for k = BEGIN:FINISH;
   if ~isempty(past.weights) && params.CAUSAL && params.WEIGHTHELP;
     [weights, wx_l, wy_l, past] = propagate_cvos_weights( ...
       weights_now, uvb_cbf_bflt, past, occb_mask, ...
-      Dx, Dy, k, opts_propagate);
+      Dx, Dy, k, params);
   else
     weights = weights_now;
   end
@@ -471,7 +397,7 @@ for k = BEGIN:FINISH;
   if ~isempty(past.unity) && params.UNITYHELP && params.CAUSAL ...
     && params.PROB_UNITY > 0;
     unity = cvos_unity_prior(past, uvb_bflt, uvb_cbf_bflt, ...
-      wx_l, wy_l, occb_mask, k, opts_unity);
+      wx_l, wy_l, occb_mask, k, params);
   else
     unity = zeros(uvsize);
   end
@@ -487,7 +413,6 @@ for k = BEGIN:FINISH;
   a = tic();
   
   if ~exist('prob_box_fg', 'var'); prob_box_fg = []; end;
-  if ~exist('count_box_fg', 'var'); count_box_fg = []; end;
   
   if ~isempty(past.constraints_b) && params.CAUSAL && params.CONSTRAINTHELP;
     [constraints_b, constraint_weights_b, constraints_causal_b, ...
@@ -495,9 +420,7 @@ for k = BEGIN:FINISH;
       I0lab, I1lab, i1_bflt, uvf_bflt, uvb_cbf_bflt, past, ...
       past.constraints_b, past.constraint_weights_b, past.weights, ...
       weights, past.xi_b, EdgeDollar, constraints_now_b, ...
-      constraint_weights_now_b, opts_propagate_constraints, ...
-      prob_box_fg, count_box_fg, objects, 11);
-      % I0_bflt, I1_bflt, uvf_bflt, uvb_cbf_bflt, past, ...
+      constraint_weights_now_b, params, objects, 11);
   else
     constraints_b = constraints_now_b;
     constraint_weights_b = constraint_weights_now_b;
@@ -511,8 +434,7 @@ for k = BEGIN:FINISH;
       I0lab, I1lab, i1_bflt, uvb_bflt, uvf_cbf_bflt, past, ...
       past.constraints_f, past.constraint_weights_f, past.weights, ...
       weights, past.xi_f, EdgeDollar, constraints_now_f, ...
-      constraint_weights_now_f, opts_propagate_constraints, ...
-      [], [], objects, 12);
+      constraint_weights_now_f, params, objects, 12);
   else
     constraints_f = constraints_now_f;
     constraint_weights_f = constraint_weights_now_f;
@@ -533,25 +455,6 @@ for k = BEGIN:FINISH;
   
   t_constraints_propagate = toc(a);
   fprintf('C: constraints propagate: %0.3f\n', t_constraints_propagate);
-  
-  %---------------------------------------------------------------------
-  %  Block that introduces a ``occlusion-driven foreground prior''
-  %---------------------------------------------------------------------
-  % TODO: constraint_weights_uno modifiying
-  a = tic();
-  
-  if params.CAUSAL && params.UNARYOCC;  
-    [unary_constraints_map, past.unary_constraints_map] = ...
-      make_unary_constraints(past, ...
-      constraints_uno_img_now_b, constraints_uno_img_now_f, opts_unary);
- 
-    if params.VIS < 200;
-      fig(451); imagesc(unary_constraints_map); colorbar; title(k);
-    end    
-  end
-  
-  t_fgoccprior = toc(a);
-  fprintf('C: occlusion driven foreground prior: %0.3f\n', t_fgoccprior);
 
   %---------------------------------------------------------------------
   % Block that introduces a ``layer-driven foreground prior''
@@ -559,7 +462,7 @@ for k = BEGIN:FINISH;
   a = tic();
   
   if ~isempty(past.prob_fg) && params.CAUSAL && params.PROB_FG > 0;
-    prob_fg = cvos_fg_prior(past, uvb_cbf_bflt, occb_mask, opts_fg); 
+    prob_fg = cvos_fg_prior(past, uvb_cbf_bflt, occb_mask, params); 
   else
     prob_fg = zeros(imsize);
   end
@@ -572,7 +475,7 @@ for k = BEGIN:FINISH;
   %------------------------------------------------------------------
   a = tic();
 
-  % creates constraints to keep going without crashing
+  % creates fake constraints if none exist to keep running
   if isempty(constraints);
     problem.constraints = [[1,2];[2,3]]; 
     problem.nocc_constraints = 2;
@@ -622,7 +525,7 @@ for k = BEGIN:FINISH;
     title(sprintf('problem.Wx (t = %d): %0.6f', k, max(Wx(:))));
   end
   
-  if params.VIS < 130; % 230 % visualization of combination here    
+  if params.VIS < 130; % visualization of weights combination here    
     cut_img   = max(0.0, weights - unity);
     u_img     = max(0.0, unity - weights);
     w_cut_img = max(0.0, 1.0 - cut_img);
@@ -643,29 +546,20 @@ for k = BEGIN:FINISH;
   %------------------------------------------------------------------
   % problem.kappa (fg prior)
   %------------------------------------------------------------------
+  fg_kappa = zeros(imsize);
+  box_kappa = zeros(imsize);
   if params.CAUSAL && ~isempty(past.layers) ...
       && ((params.BOXHELP > 0) || (params.PROB_FG > 0));
     problem.USE_TEMPORAL_PENALTY = 1;
     
     if params.CAUSAL && params.BOXHELP && ~isempty(boxes);
-      % use this, since the other will hurt 2 objects moving towards overlap
       box_kappa = params.PROB_BOX_FG * prob_box_fg;
     else
       box_kappa = 0;
     end
     
-    if params.UNARYOCC;
-      unary_kappa = params.UNARY_LAMBDA * past.unary_constraints_map(:);
-    else
-      unary_kappa = 0;
-    end
-    
     fg_kappa = params.PROB_FG * prob_fg(:);
-    
-    problem.kappa = double(max(0.0, fg_kappa(:) + unary_kappa(:) + box_kappa(:)));
-    problem.kappa_box = box_kappa(:);
-    problem.kappa_fg = fg_kappa(:);
-    problem.kappa_unary = unary_kappa(:);
+    problem.kappa = double(max(0.0, fg_kappa(:) + box_kappa(:)));
     
     if params.VIS < 300;
       kappa_img = sc(reshape(clip(problem.kappa, 0, 1), imsize), 'jet');
@@ -689,9 +583,6 @@ for k = BEGIN:FINISH;
   else
     problem.USE_TEMPORAL_PENALTY = 0;
     problem.kappa = [];
-    problem.kappa_box = [];
-    problem.kappa_fg = [];
-    problem.kappa_unary = [];
   end
   % weight for causal occlusion constraint
   if ~isempty(past.layers) && params.CAUSAL;
@@ -716,36 +607,6 @@ for k = BEGIN:FINISH;
   fprintf('C: postfiltering: %0.3f\n', t_postfilter);
   
   %------------------------------------------------------------------------
- 
-  %------------------------------------------------------------------------
-  % spread constraints a bit
-  %------------------------------------------------------------------------
-  if params.POST_PERTURB;
-    a = tic();
-    
-    constraints_spread = spread_constraints_from_boundary( ...
-      layers, constraints, 2);
-    
-    if params.VIS < 190;
-      q1 = vis_weights_occlusions(weights, constraints, imsize, ...
-        constraint_weights);
-      q2 = vis_weights_occlusions(weights, constraints_spread, imsize, ...
-        constraint_weights);
-      fig(500); clf; imagesc([q1; q2]); title('constraints: og | spread');
-    end
-    
-    constraints_spread_b = spread_constraints_from_boundary( ...
-      layers, constraints_b, 2);
-    constraints_spread_f = spread_constraints_from_boundary( ...
-      layers, constraints_f, 2);
-    
-    constraints = constraints_spread;
-    constraints_b = constraints_spread_b;
-    constraints_f = constraints_spread_f;
-    
-    t_constraints_spread = toc(a);
-    fprintf('C: post-spreading constraints: %0.3f\n', t_constraints_spread);
-  end
 
   %------------------------------------------------------------------------
   % data to be used in the next iteration
@@ -777,11 +638,6 @@ for k = BEGIN:FINISH;
   past.w_warp_uvf_denom = max(1.0, past.mag_uvf_avg / 2.0);
   past.w_warp_uvf   = exp( -sqrt(sum(uvf_cbf_bflt .^ 2, 3)) / max( ...
     sqrt(params.WARP_SAFESPEEDSQUARED), past.w_warp_uvf_denom));
-  
-
-  if params.UNARYOCC;
-    past.unary_constraints_map = unary_constraints_map;
-  end
   
   %------------------------------------------------------------------------
   % foreground map to be used in the next iteration
@@ -827,8 +683,7 @@ for k = BEGIN:FINISH;
   if params.CAUSAL && params.BOXHELP;  
     past.boxes = boxes;
     boxes = cvos_update_box_models( ...
-      boxes, layers, I1lab, Dx, Dy, weights, opts_box_models); 
-    % i1_bflt
+      boxes, layers, I1lab, Dx, Dy, weights, params);
   end
   
   t_box_models = toc(a);
@@ -840,11 +695,8 @@ for k = BEGIN:FINISH;
   a = tic();
   
   [object_map_snap] = layers_to_detachable_objects(layers);
-  [objects_out, object_map_out] = cvos_update_objects( ...
+  [objects, object_map] = cvos_update_objects( ...
     objects, object_map, object_map_snap, uvb_bflt, uvf_bflt);
-  
-  objects = objects_out;
-  object_map = object_map_out;
   
   t_objects_update = toc(a);
   fprintf('C: updating objects: %0.3f\n', t_objects_update);
@@ -864,7 +716,6 @@ for k = BEGIN:FINISH;
     past.w_fg_uvf(isnan(past.w_fg_uvf)) = 1.0;   
   else
     object_mean_uvf_map = zeros(uvsize);
-    % object_mean_uvf_map_t0 = zeros(uvsize);
     past.fg_uvf_diff = zeros(imsize);
     past.w_fg_uvf = ones(imsize);
   end
@@ -882,23 +733,19 @@ for k = BEGIN:FINISH;
     constraint_weights_old_f, constraints_now_b, constraints_now_f, ...
     constraint_weights_now_nodiv_b, constraint_weights_now_nodiv_f, ...
     constraint_weights_now_b, constraint_weights_now_f, constraints, ...
-    constraint_weights, ...
-    occb, occf, occb_cbf, occf_cbf, occb_cbf_prob, occf_cbf_prob, ...
-    occb_rev_prob, occf_rev_prob, ...
-    unary_constraints_map, max(0.0, 1.0 - weights_now), ...
-    max(0.0, 1.0 - weights), imsize, uvb, uvf, ...
-    uvb_bflt, uvf_bflt, uvb_cbf_bflt, uvf_cbf_bflt, ...
-    uvb_rev, uvf_rev, uvb_cbf, uvf_cbf, ...
-    prob_fg, i1, i1_bflt, I1, E, outpath, nameStr, params.versiontype, ...
-    seq, k, FINISH, past, params.OCCPROB, problem, boxes, ...
+    constraint_weights, occb_cbf, occf_cbf, occb_cbf_prob, occf_cbf_prob, ...
+    max(0.0, 1.0 - weights_now), ...
+    max(0.0, 1.0 - weights), imsize, uvb_cbf, uvf_cbf, ...
+    prob_fg, i1, i1_bflt, I1, outpath, nameStr, params.versiontype, ...
+    seq, k, past, problem, boxes, ...
     params.BOX_RAD, params.BOXHELP, params.VIS, params, ...
-    objects, object_map, Wx, weights, weights_now);
+    object_map, fg_kappa, box_kappa);
   
   t_vis = toc(a);
   fprintf('C: visualization: %0.3f\n', t_vis);
   
   %------------------------------------------------------------------------
-  % to prevent repeated computation
+  % prevents repeated computation
   %------------------------------------------------------------------------
   if params.CAUSAL && ~FXF && checkpoint_timer <= 0;
     checkpointFileName = sprintf('%s_%06d.mat', out_fname2, k);
@@ -915,7 +762,7 @@ for k = BEGIN:FINISH;
     rest_time = t_preprocess + t_layersnow + t_box_probs ...
       + t_constraints_now + t_weights_now + t_constraint_weights_now ...
       + t_weights_propagate + t_unity + t_constraints_propagate ...
-      + t_fgoccprior + t_fgprior + t_problem_setup ...
+      + t_fgprior + t_problem_setup ...
       + t_postfilter + t_past + t_box_models + t_objects_update ...
       + t_object_uvf + t_vis + t_flowocc_cbf + t_flowocc_bf;
     total_time = rest_time + t_problem_solve;
@@ -935,7 +782,6 @@ for k = BEGIN:FINISH;
     fprintf('weights propagation:     %02.3f\n', t_weights_propagate);
     fprintf('unity prior:             %02.3f\n', t_unity);
     fprintf('constraints weight prop: %02.3f\n', t_constraints_propagate);
-    fprintf('occ fg prior:            %02.3f\n', t_fgoccprior);
     fprintf('foreground prior:        %02.3f\n', t_fgprior);
     fprintf('problem setup:           %02.3f\n', t_problem_setup);
     fprintf('problem solving:         %02.3f\n', t_problem_solve);
@@ -951,16 +797,11 @@ for k = BEGIN:FINISH;
   %------------------------------------------------------------------------
   % if we should run the first or the last frame
   %------------------------------------------------------------------------
-  % 20141029: because of this bug I need to re-run the last 3-4 frames of
-  % every sequence at least, to get frame 3, 2, and 1 correct (T - 1, T,
-  % T+1) in the for-back causal case
   if ~params.TEST && ((k == 2) || (k == FINISH));
-    ADD = v2struct(objects, object_map, ...
+    ADD = v2struct(objects, object_map, params, ...
       seq, flow_path, img_path, flowtype, outpath, files, flow_files, ...
-      edge_model, opts_flow_occ, past, boxes, dx_inds, dy_inds, ...
-      opts_current_weights, opts_constraint_weights, opts_propagate, ...
-      Dx, Dy, opts_unity, opts_propagate_constraints, opts_fg, problem, ...
-      opts_boxes, nameStr, object_mean_uvf_map, FINISH);
+      edge_model, past, boxes, dx_inds, dy_inds, ...  
+      Dx, Dy, problem, nameStr, object_mean_uvf_map, FINISH);
 
     if (k == 2); % first frame
       cvos_lite_start(params, ADD, k - 1);
@@ -976,18 +817,6 @@ end
 save(out_fname, 'params');
 save(out_fname2, 'params');
 
-% % makin movies
-% try
-%   framerate = 5;
-%   makeMp4(outpath, seq, ['img_' params.versiontype], framerate);
-%   makeMp4(outpath, seq, ['cue_' params.versiontype], framerate);
-%   makeMp4(outpath, seq, ['res_' params.versiontype], framerate);
-%   makeMp4(outpath, seq, ['obj_' params.versiontype], framerate);
-% catch e
-%   fprintf('%s: error making/copying movies\n', mfilename);
-% end
-
-% remove "still working on it" files
 % unix(sprintf('rm %s', out_working_fname));
 unix(sprintf('rm %s', out_working_fname2));
 

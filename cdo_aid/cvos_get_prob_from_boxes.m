@@ -1,8 +1,7 @@
 function [boxes, prob_box_fg, prob_box_bg, count_box_fg, count_box_bg, weights_box] = ...
             cvos_get_prob_from_boxes( occb_mask, past, i1_bflt, boxes, opts)
 
-[rows, cols] = size(occb_mask);
-imsize = [rows, cols];
+[rows, cols] = size(occb_mask); imsize = [rows, cols];
 % v2struct(opts);
 
 if ~isempty(past.layers) && opts.CAUSAL && opts.BOXHELP && ~isempty(boxes);
@@ -10,8 +9,7 @@ if ~isempty(past.layers) && opts.CAUSAL && opts.BOXHELP && ~isempty(boxes);
   % warp forward boxes
   % out of date: b.fg_prob{,_colour,_shape}
   %----------------------------------------------------------
-  % [boxes_new, valid] = warp_bboxes_forward(boxes, past.layers, uvb_rev_bflt);
-  [boxes_new, ~] = warp_bboxes_forward(boxes, past.layers, past.uvf_cbf_bflt);
+  [boxes_new, ~] = warp_bboxes_forward(boxes, past.uvf_cbf_bflt);
   n_boxes_new = size(boxes_new, 1);
   
   %----------------------------------------------------------
@@ -46,8 +44,7 @@ if ~isempty(past.layers) && opts.CAUSAL && opts.BOXHELP && ~isempty(boxes);
       boxes_new(bk).fg_prob = bb.conf_shape .* bb.fg_prob_shape ...
         + (1.0 - bb.conf_shape) .* bb.fg_prob_colour;
       
-      % % colour only
-      % boxes_new(bk).fg_prob = bb.fg_prob_colour * bb.conf_colour;
+      % colour only
       boxes_new(bk).conf = bb.conf_colour;
     else
       fprintf('%s: fg problem\n\n', mfilename);
@@ -60,38 +57,12 @@ if ~isempty(past.layers) && opts.CAUSAL && opts.BOXHELP && ~isempty(boxes);
       boxes_new(bk).bg_prob = bb.conf_shape .* bb.bg_prob_shape ...
         + (1.0 - bb.conf_shape) .* bb.bg_prob_colour;
       
-      % % color only
-      % boxes_new(bk).bg_prob = bb.bg_prob_colour * bb.conf_colour;
+      % color only
       boxes_new(bk).conf = bb.conf_colour;
     else
       fprintf('%s: bg problem\n\n', mfilename);
     end
   end
-    
-  % % % % combine colour and shape and flow
-  % % % for bk = 1:n_boxes_new;
-  % % %   bb = boxes_new(bk);
-  % % %
-  % % %   sz_conf_shape = size(bb.conf_shape);
-  % % %
-  % % %   sz_fg_shape = size(bb.fg_prob_shape);
-  % % %   sz_fg_colour = size(bb.fg_prob_colour);
-  % % %   if all(sz_conf_shape == sz_fg_shape) && all(sz_conf_shape == sz_fg_colour);
-  % % %     boxes_new(bk).fg_prob = bb.conf_shape .* bb.fg_prob_shape ...
-  % % %       + (1.0 - bb.conf_shape) .* bb.fg_prob_colour;
-  % % %   else
-  % % %     fprintf('\nfg problem\n\n');
-  % % %   end
-  % % %
-  % % %   sz_bg_shape = size(bb.fg_prob_shape);
-  % % %   sz_bg_colour = size(bb.fg_prob_colour);
-  % % %   if all(sz_conf_shape == sz_bg_shape) && all(sz_conf_shape == sz_bg_colour);
-  % % %     boxes_new(bk).bg_prob = bb.conf_shape .* bb.bg_prob_shape ...
-  % % %       + (1.0 - bb.conf_shape) .* bb.bg_prob_colour;
-  % % %   else
-  % % %     fprintf('\nbg problem\n\n');
-  % % %   end
-  % % % end
     
   %----------------------------------------------------------
   % use boxes to affect optimization
@@ -116,7 +87,6 @@ if ~isempty(past.layers) && opts.CAUSAL && opts.BOXHELP && ~isempty(boxes);
   
   [w_bg, cnt_bg] = bboxes_to_pixelwise_weights(imsize, boxes_new, 0);
   [w_fg, cnt_fg] = bboxes_to_pixelwise_weights(imsize, boxes_new, 1);
-  % TODO: a better function than this?
   weights_box = w_bg + w_fg - 1.0 * ((cnt_bg + cnt_fg) > 0);
   
   if any(isnan(weights_box(:)));

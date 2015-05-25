@@ -8,32 +8,24 @@ FGTHRESH = 0.75;
 CP = opts.CONS_PERTURB;
 
 if opts.CAUSAL && opts.BOXHELP;
-  tic
-  
-  % TODO: jitter box towards layer ege boundary
-  [new_boxes, boxes, valid_boxes] = bboxes_for_mask_update( ...
+  [new_boxes, boxes] = bboxes_for_mask_update( ...
     layers, Dx, Dy, opts.BOX_RAD, boxes, BOX_LIMIT);
   n_newboxes = length(new_boxes);
   n_boxes = length(boxes);
-  all_boxes = [boxes; new_boxes];
-  
-  toc
   
   %-----------------------------------------------------------------
   % learn gmm if foreground objects exist and we have valid boxes
   %-----------------------------------------------------------------
-  if ~isempty(all_boxes) && max(layers(:)) >= 1;     
-    [mu_fg, cov_fg, pi_fg, mu_bg, cov_bg, pi_bg] = learn_bbox_gmm_mex( ...
-      i1_bflt, double(layers), double(weights), all_boxes, ...
-      CP.NUM_GMM_CLUSTERS, CP.NUM_GMM_REPETITIONS, CP.NUM_GMM_ITERATIONS, ...
-      GMM_PROB_FG_MASK_THRESH, GMM_PROB_BG_MASK_THRESH);
-    
+  if max(layers(:)) >= 1;       
     %-----------------------------------------------------------------
     % choose which gmm to use (model selection on fg size)
     %-----------------------------------------------------------------
     % for new boxes, learn fresh
     if n_newboxes > 0;
-      % if isempty(all_boxes(1).fg_gmm_mu); % hasn't been set yet
+      [mu_fg, cov_fg, pi_fg, mu_bg, cov_bg, pi_bg] = learn_bbox_gmm_mex( ...
+        i1_bflt, double(layers), double(weights), new_boxes, ...
+        CP.NUM_GMM_CLUSTERS, CP.NUM_GMM_REPETITIONS, CP.NUM_GMM_ITERATIONS, ...
+        GMM_PROB_FG_MASK_THRESH, GMM_PROB_BG_MASK_THRESH);
       for bk = 1:n_newboxes;
         new_boxes(bk).gmm_change = true;
         new_boxes(bk).fg_gmm_mu = mu_fg(:,:,bk);
@@ -52,15 +44,22 @@ if opts.CAUSAL && opts.BOXHELP;
     end
       
     if n_boxes > 0; % for old boxes, do some checks
+      [mu_fg, cov_fg, pi_fg, mu_bg, cov_bg, pi_bg] = learn_bbox_gmm_mex( ...
+        i1_bflt, double(layers), double(weights), boxes, ...
+        CP.NUM_GMM_CLUSTERS, CP.NUM_GMM_REPETITIONS, CP.NUM_GMM_ITERATIONS, ...
+        GMM_PROB_FG_MASK_THRESH, GMM_PROB_BG_MASK_THRESH);
+        
       % evaluate historic model (frame 0 model)
       for bk = 1:n_boxes;
         boxes(bk).fg_gmm_mu(:, (CP.NUM_GMM_CLUSTERS + 1):end, :) = [];
         boxes(bk).fg_gmm_cov(:, (CP.NUM_GMM_CLUSTERS + 1):end, :) = [];
         boxes(bk).fg_gmm_pi((CP.NUM_GMM_CLUSTERS + 1):end, :) = [];
+        boxes(bk).fg_gmm_pi = boxes(bk).fg_gmm_pi/sum(boxes(bk).fg_gmm_pi);
         
         boxes(bk).bg_gmm_mu(:, (CP.NUM_GMM_CLUSTERS + 1):end, :) = [];
         boxes(bk).bg_gmm_cov(:, (CP.NUM_GMM_CLUSTERS + 1):end, :) = [];
         boxes(bk).bg_gmm_pi((CP.NUM_GMM_CLUSTERS + 1):end, :) = [];
+        boxes(bk).bg_gmm_pi = boxes(bk).bg_gmm_pi/sum(boxes(bk).bg_gmm_pi);
       end
       [box_fg_1, box_bg_1] = eval_gmm_bboxes_mex(i1_bflt, boxes);
         
@@ -86,6 +85,15 @@ if opts.CAUSAL && opts.BOXHELP;
         up_boxes(bk).bg_gmm_cov = up_boxes(bk).bg_gmm_cov(:, valid);
         up_boxes(bk).bg_gmm_pi  = up_boxes(bk).bg_gmm_pi(valid);        
         up_boxes(bk).bg_gmm_pi = up_boxes(bk).bg_gmm_pi/sum(up_boxes(bk).bg_gmm_pi);
+        
+        if isempty(up_boxes(bk).bg_gmm_pi) || isempty(up_boxes(bk).fg_gmm_pi)
+            up_boxes(bk).fg_gmm_mu  = zeros(3,CP.NUM_GMM_CLUSTERS) + nan;
+            up_boxes(bk).fg_gmm_cov = zeros(3,CP.NUM_GMM_CLUSTERS) + nan;
+            up_boxes(bk).fg_gmm_pi  = zeros(CP.NUM_GMM_CLUSTERS,1) + nan;
+            up_boxes(bk).bg_gmm_mu  = zeros(3,CP.NUM_GMM_CLUSTERS) + nan;
+            up_boxes(bk).bg_gmm_cov = zeros(3,CP.NUM_GMM_CLUSTERS) + nan;
+            up_boxes(bk).bg_gmm_pi  = zeros(CP.NUM_GMM_CLUSTERS,1) + nan;
+        end     
       end
       [box_fg_2, box_bg_2] = eval_gmm_bboxes_mex(i1_bflt, up_boxes);
   
@@ -97,9 +105,6 @@ if opts.CAUSAL && opts.BOXHELP;
         nfg1 = sum(fg1(:));
         nfg2 = sum(fg2(:));
         
-        % TODO: maybe keep whichever segmentation is smoother +
-        % smaller, define some energy to evaluate it
-        % classic model has larger fg, then keep updated region
         if (nfg1 > nfg2);
           boxes(bk).gmm_change = true;
           
@@ -113,12 +118,6 @@ if opts.CAUSAL && opts.BOXHELP;
           
           boxes(bk).fg_prob = box_fg_2(bk).prob;
           boxes(bk).bg_prob = box_bg_2(bk).prob;
-          
-          % update patches for colour model update
-          % I think the conf requires both the layers patch at the time
-          % and the confidence, so it can be recomputed (TODO)
-          % all_boxes(bk).patches = cat(3, all_boxes(bk).patches, ...
-          %   i1_bflt(ys, xs, :));
         else
           boxes(bk).gmm_change = false;
           boxes(bk).fg_prob = box_fg_1(bk).prob;
@@ -132,31 +131,10 @@ if opts.CAUSAL && opts.BOXHELP;
     %-------------------------------
     % prune out any bad NaN gmms
     %-------------------------------
-    % after choosing which gmms
     bad_gmm_bg = isnan(sum(pi_bg, 1));
     bad_gmm_fg = isnan(sum(pi_fg, 1));
-    
-    % assert(bad_gmm_bg == bad_gmm_fg, 'the same box is bad');
     bad_gmm = bad_gmm_fg | bad_gmm_bg;
-    
     all_boxes(bad_gmm) = [];
-    
-    % % % %-------------------------------
-    % % % % learn the flow model
-    % % % %-------------------------------
-    % % % % learning flow model (mean fg flow, mean bg flow)
-    % % % [uv_bg, conf_uv_bg, uv_fg, conf_uv_fg, valid_uv] = learn_bbox_uv_model( ...
-    % % %   all_boxes, uvf_bflt);
-    % % % all_boxes = all_boxes(valid_uv);
-    % % % n_all_boxes = size(all_boxes, 1);
-    % % % for bk = 1:n_all_boxes;
-    % % %   all_boxes(bk).u_bg = uv_bg(bk, 1);
-    % % %   all_boxes(bk).v_bg = uv_bg(bk, 2);
-    % % %   all_boxes(bk).u_fg = uv_fg(bk, 1);
-    % % %   all_boxes(bk).v_fg = uv_fg(bk, 2);
-    % % %   all_boxes(bk).conf_uv_bg = conf_uv_bg(bk); % some variance
-    % % %   all_boxes(bk).conf_uv_fg = conf_uv_fg(bk); % some variance
-    % % % end
     
     %-----------------------------------------------------------------
     % evaluate on current frame to obtain confidences for new boxes
@@ -175,9 +153,6 @@ if opts.CAUSAL && opts.BOXHELP;
     
     % finish it
     boxes = all_boxes;
-  else
-    % TODO: do somerthing smarter, or make this a parameter
-    % box_conf = box_conf * 0.9;
   end
 end
 end

@@ -18,7 +18,7 @@ function FG = utils_get_foreground_map(layers, area_threshold)
     kk=1;
     n = numel(FG);
     while ( sum(FG(:))/n > area_threshold && kk<10 ) 
-        % crap, everything was labeled as foreground...
+        % in case everything was labeled as foreground...
         FG = layers > (kk+0.5);
         kk=kk+1;
     end

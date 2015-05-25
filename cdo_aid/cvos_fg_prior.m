@@ -58,9 +58,6 @@ end
 prob_fg = fg_warped_1;
 prob_fg( isnan(prob_fg ) ) = 0;
 
-% TODO: why does this erode so much? :/, perhaps we should use both warp_fg
-% techniques and remove a much smaller amount here.
-
 % erode edges based on flow magnitude in that region
 prob_fg_chk = imerode(prob_fg > 0.01, dsk);
 diminish_fg = 1 - exp(- max(0.0, fg_msfm - 2*ERODE_SZ) ...

@@ -5,8 +5,7 @@
 %
 % @note: b.fg_prob{,_colour,_shape} all in frame t-1
 % TODO(vasiliy): can divisions result in NaNs here?
-function [boxes_out, valid] = warp_bboxes_forward(boxes, layers, uvf, ...
-  WARPSAFESPEED)
+function [boxes_out, valid] = warp_bboxes_forward(boxes, uvf, WARPSAFESPEED)
 
 if ~exist('WARPSAFESPEED'); WARPSAFESPEED = 20; end;
 
@@ -30,33 +29,29 @@ for k = 1:n;
   x = round(b.x);
   r = b.r;
 
+  % image
   ymin = max(1,    y - r);
   ymax = min(rows, y + r);
   xmin = max(1,    x - r);
   xmax = min(cols, x + r);
-  
-  ysz = ymax - ymin + 1;
-  xsz = xmax - xmin + 1;
 
   ys = ymin:ymax;
   xs = xmin:xmax;
-
-  % TODO: hope fg_mask isn't empty, but might need to check later
-  % if sum(b.fg_mask(:)) <= 0.02 * ysz * xsz;
-  %   msk = ones(ysz, xsz);
-  % end
   
-  % msk = b.fg_mask > 0.5;
-  % u = uvf(ys,xs,1);
-  % v = uvf(ys,xs,2);
-  % ub = mean(vec(u(msk)));
-  % vb = mean(vec(v(msk)));
+  % box
+  bymin = ymin - y + r + 1;
+  bymax = ymax - y + r + 1;
+  bxmin = xmin - x + r + 1;
+  bxmax = xmax - x + r + 1;
+  
+  bys = bymin:bymax;
+  bxs = bxmin:bxmax;
 
   msk = (b.fg_mask > 0.5) .* b.fg_prob .* b.gmm_learn_colour_mask;
   den = sum(msk(:));
   if (den >= 1.0);
-    u = uvf(ys,xs,1) .* msk;
-    v = uvf(ys,xs,2) .* msk;
+    u = uvf(ys,xs,1) .* msk(bys,bxs);
+    v = uvf(ys,xs,2) .* msk(bys,bxs);
     ub = sum(u(:)) / den;
     vb = sum(v(:)) / den;
   else

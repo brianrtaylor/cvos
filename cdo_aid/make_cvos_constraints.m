@@ -2,7 +2,6 @@
 function [constraints, constraint_weights, indbad] = make_cvos_constraints( ...
   occ_prob, uv, uv_rev, OCCPROB, MINCONSTRAINTDIST, VIS, fig_idx)
 if ~exist('VIS', 'var'); VIS = inf; end;
-
 [rows, cols, ~] = size(uv);
 
 % find occd, occr
@@ -23,7 +22,6 @@ if VIS < 150 && fig_idx
   occ3_msk = repmat(ind_occ, [1, 1, 3]);
   occ_drawn = sc(double(ind_occ) .* occ_prob, 'jet');
   occ_img = 0.1*uv_img + 0.9*(uv_img.*~occ3_msk + occ_drawn.*occ3_msk);
-  % occ_img = uv_img * 0.1 + occ_drawn * 0.9;
   cue_img = vis_cues(uv_img, constraints, constraint_weights, 0.0);
   fig(fig_idx); clf; imagesc([occ_img; cue_img]);
 end

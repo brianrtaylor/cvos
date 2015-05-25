@@ -19,10 +19,6 @@ params.CONSTRAINTS_LOW_CUTOFF = 0.01;
 params.E_SIGMOID_MEAN = 0.75;
 params.E_SIGMOID_SCALE = 10.0;
 
-params.DIVFLAG = false;
-params.FERRARIFLAG = true;
-params.LOCALFLOWADJUST = false; % not great (try with more than cube)
-params.LOCALFLOWWEIGHTADJUST = false; % unused?
 params.WEIGHT_MAG_THRESHOLD = 0.65;
 params.THETA = 0.2;
 params.MINWUV = 5e-3;
@@ -33,10 +29,6 @@ params.DIV_UV_THRESHOLD = 0.01;
 params.PAIR = 1.0;
 params.LAMBDA = 0.5;
 params.TAU1 = 5e-4;
-params.TAU2 = 0.5;
-
-% essentially turned off for now
-params.UNARY_LAMBDA = 0.00; % 10 x stronger than PROB_FG
 
 params.OCCPROBLAYERTHRESH = 0.1;
 params.OCCPROB = 0.5;
@@ -50,30 +42,23 @@ params.DO_CONSTRAINT_WARP_WEIGHT = true;
 params.DO_CONSTRAINT_OBJECT_WARP_WEIGHT = true;
 params.DO_FOREGROUND_WARP_WEIGHT = true;
 params.DO_WEIGHT_WARP_WEIGHT = true;
-% params.TV_WARP_WEIGHT = true;
 
 params.VIS = 500;
 params.LOADFLOW = true;
 params.m = [];
 
-% TODO: increase or decrease memory (weights: seems like increase for 
-%   moseg, decrease for videosegmentation)
-% killed if not a part of any segmentation for 5 frames
-params.UNARY_CONSTRAINT_MEMORY_FACTOR = 0.2;
-% killed if not a part of any segmentation for 5 frames just about
+% killed if not a part of any segmentation for about 5 frames
+params.UNARY_CONSTRAINT_MEMORY_FACTOR = 0.20;
 params.CONSTRAINT_MEMORY_FACTOR = 0.20; 
-% killed if not a part of any segmentation for 5 frames just about
 params.WEIGHT_MEMORY_FACTOR = 0.20;
-% killed if not a part of any segmentation for 10 frames just about
 params.FG_MEMORY_FACTOR = 0.20;
-% killed if not a part of any segmentation for 5 frames just about
 params.TV_MEMORY_FACTOR = 0.20;
-params.CONSTRAINT_INSIDE_FG_MEMORY_FACTOR = 0.5; % kill em off in 2 frames
-params.OCC_INSIDE_FG_MEMORY_FACTOR = 0.5; % kill em off in 2 frames
-params.OCC_INSIDE_WEIGHTS_MEMORY_FACTOR = 0.5; % kill em off in 2 frames
-% params.TV_INSIDE_FG_MEMORY_FACTOR = 0.5; % kill em off in 2 frames 
-% isn't used, the weighst additing naturally does this % isn't used, 
-% the weighst additing naturally does this
+
+% kill em off in 2 frames
+params.CONSTRAINT_INSIDE_FG_MEMORY_FACTOR = 0.5;
+params.OCC_INSIDE_FG_MEMORY_FACTOR = 0.5;
+params.OCC_INSIDE_WEIGHTS_MEMORY_FACTOR = 0.5;
+
 params.OCCMETHOD = 'RGB_RES';
 
 % increases weight on foreground constraint each segmentation
@@ -109,9 +94,6 @@ params.DO_CONSTRAINT_WEIGHT_SIGMOID = false;
 params.DO_FORBACKCAUSAL = false;
 
 params.DO_RECOMPUTE_OLD_WEIGHTS_IN_CURRENT_FRAME = false;
-
-% unary occ
-params.UNARYOCC = false;
 
 % boxes for edges
 params.BOX_RAD = 15;

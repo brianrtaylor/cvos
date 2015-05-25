@@ -42,18 +42,6 @@ if n_probs_colour < n_probs;
   bg_prob_colour = cat(3, bg_prob_colour, pad0);
 end
 
-% % % % flow
-% % % conf_uv_fg = repmat(cat(3, boxes.conf_uv_fg), height, width);
-% % % conf_uv_bg = repmat(cat(3, boxes.conf_uv_bg), height, width);
-% % % fg_prob_uv = cat(3, boxes.fg_prob_uv) .* conf_uv_fg;
-% % % bg_prob_uv = cat(3, boxes.bg_prob_uv) .* conf_uv_bg;
-% % % n_probs_uv = size(fg_prob_uv, 3);
-% % % if n_probs_uv < n_probs;
-% % %   pad0 = zeros(height, width, n_probs - n_probs_uv);
-% % %   fg_prob_uv = cat(3, fg_prob_uv, pad0);
-% % %   bg_prob_uv = cat(3, bg_prob_uv, pad0);
-% % % end
-
 % shape
 conf_shape = cat(3, boxes.conf_shape);
 fg_prob_shape = cat(3, boxes.fg_prob_shape) .* conf_shape;
@@ -69,7 +57,6 @@ end
 omask = [fg_mask, vbar, bg_mask];
 oprob = [fg_prob, vbar, bg_prob];
 oprob_colour = [fg_prob_colour, vbar, bg_prob_colour];
-% oprob_uv = [fg_prob_uv, vbar, bg_prob_uv];
 oprob_shape = [fg_prob_shape, vbar, bg_prob_shape];
 
 % old mask

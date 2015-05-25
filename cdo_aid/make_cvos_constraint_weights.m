@@ -4,7 +4,7 @@
 % @param: opts : contains useful options
 %   * DO_CONS_PERTURB : 1 to perturb constraints with gmm
 %   * CONS_PERTURB : parameters associated with this process
-%   * CONSTRAINTS_DIVWEIGHT : 1 to use negative divergence for weighting constraints
+%   * CONSTRAINTS_DIVWEIGHT : 1 to use negative divergence to weight constraints
 %   * relative_weights_constraints : weights between intensity and flow and gpb
 %--------------------------------------------------------------------
 function [constraints, constraint_weights, w] = make_cvos_constraint_weights( ...
@@ -55,9 +55,8 @@ else
   % incorporate color, flow, gpb edge crossing, divergence into weight
   [w, w_div, ~, w_uvb, w_uvf, w_edgecross] = ...
     make_pixelwise_nonadj_weights(constraints, ...
-    I, uvb, uvf, E, relative_weights_constraints, true); % used to be Ilab
+    I, uvb, uvf, E, relative_weights_constraints, true);
   if DO_CONS_NOW_PERTURB;
-    %  constraint_weights = constraint_weights .* gmm_weights;
     b = relative_weights_constraints / sum(relative_weights_constraints);
     w = b(1) * (1.0 - gmm_weights) ...
       + b(2) * ((w_uvb + w_uvf) / 2.0) ...
@@ -68,7 +67,6 @@ else
   if DO_CONSTRAINT_DIVWEIGHT;
     constraint_weights = constraint_weights .* w_div;
   end
-  
   
   if VIS < 250 && exist('lol', 'var');
     uvf_img  = im2double(flowToColor(uvf));

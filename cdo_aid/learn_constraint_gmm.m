@@ -20,8 +20,6 @@ function [local_gmm_bg, local_gmm_fg] = ...
 
     % create a boundary image and binarize it. we will not consider
     % occluders/occluded points in the vicinity of the edge.
-    % npx = prod(imsize);
-    % W = 0.5*reshape( weights(1:npx)+weights(npx+1:end), imsize);
     W = 0.5 * sum(weights, 3);
     W_binary = W <= 0.75;
 

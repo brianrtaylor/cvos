@@ -1,6 +1,3 @@
-% [constraints, constraint_ages, gmm_weights, warp_weights] = ...
-%             gmm_constraint_warping(uvf_prev, Ib, I0, prev_weights, weights, ...
-%                     constraints_prev, constraint_ages_prev, prev_layers, params)
 % -------------------------------------------------------------------------
 % INPUT:
 % -------------------------------------------------------------------------
@@ -12,7 +9,6 @@
 %   weights = weights(t) (current weights)
 %   constraints_prev - constraints defined in the domain of the previous
 %       frame.
-%   constraints_ages_prev - ages of constraints...
 %   prev_layers = segmentation(t-1)
 %   params - parameter structure.............
 %
@@ -22,8 +18,6 @@
 %
 %   constraints - in the domain of the current frame, appropriately
 %   deformed...
-%   constraint_ages - ages of the constraints that remained after filtering
-%        NOTE THAT THESE ARE ***NOT*** UPDATED.
 %   gmm_weights - weights, computed according to:
 %           w(i) = 0.5*( Pr(x_{FG} \in FG) + Pr(x_{BG} \in BG ) )
 %       if weight is near 1, the constraint is reliable.
@@ -38,10 +32,10 @@
 %   ind_out - output ordering of input constraints. so constraints =
 %       constraints_prev(ind_out, :), essentially, assuming none invalid
 %
-function [constraints, constraint_ages, gmm_weights, warp_weights, valid] = ...
+function [constraints, gmm_weights, warp_weights, valid] = ...
     gmm_constraint_warping( ...
   uvf_prev, Ib, I0, prev_weights, weights, constraints_prev, ...
-  constraint_ages_prev, prev_layers, params, WARP_SAFESPEEDSQUARED)
+  prev_layers, params, WARP_SAFESPEEDSQUARED)
 
     N = size(constraints_prev, 1);
     valid = false(N, 1); % fails through, all fail
@@ -67,7 +61,6 @@ function [constraints, constraint_ages, gmm_weights, warp_weights, valid] = ...
     ind_active = find(tokeep);
     if sum(tokeep) > 0
         constraints_prev_active = constraints_prev(tokeep,:);
-        constraint_ages_prev_active = constraint_ages_prev(tokeep,:);
         if params.cons_perturb.DO_CONS_PERTURB;
 
           groups = utils_group_constraints(constraints_prev_active, imsize, params.cons_perturb.GROUP_SIZE);
@@ -83,7 +76,6 @@ function [constraints, constraint_ages, gmm_weights, warp_weights, valid] = ...
             warp_constraints_forward(constraints_prev_active, uvf_prev, ...
             WARP_SAFESPEEDSQUARED);
           % Validate after warping:
-          constraint_ages_prev_active = constraint_ages_prev_active(valid_active);
           groups = groups(valid_active);
 
           fprintf('Perturbing constraints.\n');
@@ -96,15 +88,13 @@ function [constraints, constraint_ages, gmm_weights, warp_weights, valid] = ...
         else
             [constraints_prev_active, warp_weights_active, valid_active] = ...
               warp_constraints_forward(constraints_prev_active, uvf_prev, ...
-              WARP_SAFESPEEDSQUARED);
-            constraint_ages_prev_active = constraint_ages_prev_active(valid_active);                        
+              WARP_SAFESPEEDSQUARED);                     
             gmm_weights_active = ones( size(constraints_prev_active, 1), 1);
         end
         valid(ind_active) = valid_active;
     else
       constraints_prev_active = zeros(0,2);
       warp_weights_active = [];
-      constraint_ages_prev_active = [];
       gmm_weights_active = [];
     end
 
@@ -113,7 +103,6 @@ function [constraints, constraint_ages, gmm_weights, warp_weights, valid] = ...
     ind_inactive = find(tokeep);
     if sum(tokeep) > 0
         constraints_prev_inactive = constraints_prev(tokeep,:);
-        constraint_ages_prev_inactive = constraint_ages_prev(tokeep,:);
         if params.cons_perturb.DO_CONS_PERTURB;
 
           groups = utils_group_constraints(constraints_prev_inactive, imsize, params.cons_perturb.GROUP_SIZE);
@@ -127,7 +116,6 @@ function [constraints, constraint_ages, gmm_weights, warp_weights, valid] = ...
           [constraints_prev_inactive, warp_weights_inactive, valid_inactive] = ...
             warp_constraints_forward(constraints_prev_inactive, uvf_prev, ...
             WARP_SAFESPEEDSQUARED);
-          constraint_ages_prev_inactive = constraint_ages_prev_inactive(valid_inactive);
           groups = groups(valid_inactive);
 
           fprintf('Perturbing constraints.\n');
@@ -142,14 +130,12 @@ function [constraints, constraint_ages, gmm_weights, warp_weights, valid] = ...
             warp_constraints_forward(constraints_prev_inactive, uvf_prev, ...
             WARP_SAFESPEEDSQUARED);
           if isempty(valid); valid = valid_inactive; else valid = valid & valid_inactive; end;
-          constraint_ages_prev_inactive = constraint_ages_prev_inactive(valid_inactive);
           gmm_weights_inactive = ones( size(constraints_prev_inactive, 1), 1);                
         end
         valid(ind_inactive) = valid_inactive;
     else
         constraints_prev_inactive = zeros(0,2);
         warp_weights_inactive = [];
-        constraint_ages_prev_inactive = [];
         gmm_weights_inactive = [];
     end
     fprintf('# constraints: active: %d inactive: %d\n', ...
@@ -161,13 +147,6 @@ function [constraints, constraint_ages, gmm_weights, warp_weights, valid] = ...
     constraints(ind_inactive(valid_inactive), :) = constraints_prev_inactive;
     constraints(ind_active(valid_active), :) = constraints_prev_active;
     constraints = constraints(logical(valid), :);
-    % constraints = [constraints_prev_inactive; constraints_prev_active];
-    
-    constraint_ages = zeros(N, 1);
-    constraint_ages(ind_inactive(valid_inactive)) = constraint_ages_prev_inactive;
-    constraint_ages(ind_active(valid_active)) = constraint_ages_prev_active;
-    constraint_ages = constraint_ages(logical(valid), :);
-    % constraint_ages = [constraint_ages_prev_inactive; constraint_ages_prev_active];
     
     gmm_weights = zeros(N, 1);
     gmm_weights(ind_inactive(valid_inactive)) = gmm_weights_inactive;

@@ -13,14 +13,6 @@ function [uvb_cbf, uvf_cbf, occb_cbf, occf_cbf, occb_cbf_prob, occf_cbf_prob] = 
 if ~exist('VIS', 'var'); VIS = 100; end;
 [rows,cols,~] = size(I1); imsize = [rows, cols];
 
-% % moseg (sun)
-% SIGMA_R_DIVIDE = 15.0;
-% SIGMA_R_MIN = 0.5;
-% SIGMA_R_MAX = 4.0;
-% OCCMETHOD = 'LAB_RES';
-% W = 25;
-
-% segtrack (g4v)
 OCCMETHOD = 'RGB_RES';
 SIGMA_R_DIVIDE = 15.0;
 SIGMA_R_MIN = 0.25;
@@ -39,9 +31,6 @@ dsk = strel('disk', 2);
 
 if isempty(occf_rev); occf_rev = zeros(imsize); end;
 if isempty(occb_rev); occb_rev = zeros(imsize); end;
-
-% TODO: use backward occlusions (b_r2) to say that the pixels where the
-% residual value in uvb > residual of uvf are places we shouldn't alter
 
 %-------------------------------------------------------------------
 % compute some variables (safe flow, occ{b,f}_prob, ruv{b,f})

@@ -24,7 +24,6 @@ weights_sigmoid = sigmoid(weights, SIGMOID_MEAN, SIGMOID_SCALE);
 weights = weights_sigmoid;
 weights( weights < WEIGHTS_LOW_CUTOFF ) = 0;
 
-% hack to make higher values wanted
 weights = 1 - weights;
 weights_inds = [dx_inds; dy_inds];
 end

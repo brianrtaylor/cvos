@@ -1,3 +1,4 @@
+%--------------------------------------------------------------------
 % @return: boxes: boxes are defined by a N x 3 array of centers (y,x), and
 % a radius
 %
@@ -14,12 +15,14 @@
 % * mask (perhaps)
 % * colour model (box_gmm_bg, box_gmm_fg)
 % * colour confidence
-% * shape model 
+% * shape model
+%--------------------------------------------------------------------
 function [new_boxes, boxes, valid_boxes] = bboxes_for_mask_update( ...
   mask_in, Dx, Dy, r, boxes, box_limit, boxes_per_pixel_limit)
 
 BOX_MEMORY_FACTOR = 0.2;
-VIS = 999999999;
+BOXJITTER = true;
+VIS = 999;
 
 if ~exist('box_limit', 'var') || (box_limit < 0); box_limit = inf; end;
 if ~exist('boxes_per_pixel_limit', 'var'); boxes_per_pixel_limit = 3; end;
@@ -27,17 +30,12 @@ if ~exist('boxes_per_pixel_limit', 'var'); boxes_per_pixel_limit = 3; end;
 imsize = [rows, cols];
 dsk = strel('disk', 5);
 
-% mask = double(mask_in(:) > 0.5);
 mask = round(mask_in);
 mask_vals = unique(mask_in);
 n_mask_vals = length(mask_vals);
 
 if isempty(boxes); n_boxes = 0; else; n_boxes = size(boxes, 1); end
-
-% now per box item
-% [box_height, box_width, ~] = size(box_fg);
 diam = 2 * r + 1;
-% npx = diam * diam;
     
 yy = repmat((-r:r)', 1, diam);
 xx = repmat((-r:r) , diam, 1);
@@ -61,9 +59,6 @@ look = look_img;
 %--------------------------------------------------------------------
 % go through existing boxes and choose to keep / toss
 %--------------------------------------------------------------------
-% mark first, delete in fell swoop after
-% p_all = find(look_img > 0);
-% check_p = look(p_all);
 counts = zeros(imsize);
 
 % methods to balance boxes:
@@ -79,16 +74,8 @@ counts = zeros(imsize);
 
 % sortboxes on confidence
 if ~isempty(boxes);
-  [conf_bb_sorted, boxes_ind] = sort(cat(1, boxes.conf), 1, 'descend');
+  [~, boxes_ind] = sort(cat(1, boxes.conf), 1, 'descend');
   boxes = boxes(boxes_ind);
-  
-  if VIS < 100;
-    if ~isempty(conf_bb_sorted);
-      fprintf('\n--- boxes conf ---\n');
-      stat(conf_bb_sorted);
-      fprintf('\n\n');
-    end
-  end
 end
 
 valid_boxes = true(n_boxes, 1);
@@ -101,7 +88,6 @@ for k = 1:n_boxes;
   diam = 2 * r + 1;
   z = zeros(diam, diam);
   
-  BOXJITTER = 1;
   if BOXJITTER;
     % modify y,x based on the edge image
     ymin = max(1,    y - r);
@@ -112,10 +98,6 @@ for k = 1:n_boxes;
     ys = ymin:ymax;
     xs = xmin:xmax;
     
-    by = y - ymin + 1;
-    bx = x - xmin + 1;
-    
-    % TODO: can use boxes(k).{x,y} here instead of x,y if you'd like
     bedge = ad_l(ys,xs) > 0;
     [bedgey, bedgex] = find(bedge);
     if ~isempty(bedgey) && ~isempty(bedgex);
@@ -123,10 +105,6 @@ for k = 1:n_boxes;
       [~, eidx] = min(bdist);
       y = ymin + bedgey(eidx) - 1;
       x = xmin + bedgex(eidx) - 1;
-%     else
-%       % stop early check
-%       boxes(k).conf = boxes(k).conf  - BOX_MEMORY_FACTOR;
-%       % valid_boxes(k) = false; continue;
     end
   end
   
@@ -151,17 +129,9 @@ for k = 1:n_boxes;
   
   bys = bymin:bymax;
   bxs = bxmin:bxmax;
-
-%   % fg/bg prob
-%   fg_prob = box_fg(:,:,k);
-%   bg_prob = box_bg(:,:,k);
   
   %------------------------------------------------------------------
   % changes to the box
-  %
-  % TODO: change this portion to preserve the box as it was before if the
-  % layer has changed to 0, cuz then maybe we lost the object, but it's
-  % still there. sooo.. check that
   %------------------------------------------------------------------
   % udpate age
   boxes(k).age = boxes(k).age + 1;
@@ -194,11 +164,7 @@ for k = 1:n_boxes;
       - imdilate(edge(boxes(k).fg_mask), dsk));
   else
     boxes(k).conf = boxes(k).conf - BOX_MEMORY_FACTOR;
-    % boxes(k).conf_colour = boxes(k).conf_colour * 0.75;
   end
-  
-  % update patches
-  % boxes(k).patches = cat(3, boxes(k).patches, i1(ys, xs, :));
 
   %------------------------------------------------------------------
   % keep or toss box criteria
@@ -207,11 +173,6 @@ for k = 1:n_boxes;
   if (y < 1) || (y > rows) || (x < 1) || (x > cols);
     valid_boxes(k) = false; continue;
   end
-
-  % % box shrinks too much (image edge)
-  % if ((nys * nxs) < (0.5 * npx));
-  %   valid_boxes(k) = false; continue;
-  % end
 
   % if fg or bg < %10 of the box, lower confidence
   % or if the mask to learn gmm from / do movement is too small
@@ -224,8 +185,6 @@ for k = 1:n_boxes;
   if (nmsk < TOOFEW) || (nmsk > TOOMUCH) || (nmsk_learn < TOOFEW) ...
     || (nmsk_learn > TOOMUCH);
     boxes(k).conf = boxes(k).conf - BOX_MEMORY_FACTOR;
-    % boxes(k).conf_colour = boxes(k).conf_colour - BOX_MEMORY_FACTOR;
-    % valid_boxes(k) = false; continue;
   end
   
   % if new lay_occr is background layer, or occlusion constraint isn't
@@ -263,18 +222,10 @@ if ~isempty(valid_boxes);
   n_boxes = sum(valid_boxes);
 end
 
-if n_boxes > 0;
-  if VIS < 100;
-    stat(cat(1, boxes.conf));
-    fprintf('\n--------------------\n');
-  end
-end
-
 %--------------------------------------------------------------------
 % add new boxes
 %--------------------------------------------------------------------
 p_all = find(look > 0);
-% [py, px] = ind2sub(imsize, p_all);
 
 p_out       = zeros(1, 0);
 pts_to_add  = zeros(1, 0);
@@ -315,21 +266,11 @@ new_boxes.conf_mask = [];
 new_boxes.conf_shape = [];
 new_boxes.sigma_shape = [];
 new_boxes.age = [];
-new_boxes.patches = [];
-new_boxes.u_bg = [];
-new_boxes.v_bg = [];
-new_boxes.u_fg = [];
-new_boxes.v_fg = [];
-new_boxes.conf_uv_bg = []; % some variance
-new_boxes.conf_uv_fg = []; % some variance
-new_boxes.bg_prob_uv = []; % some variance
-new_boxes.fg_prob_uv = []; % some variance
 
 k = 0;
 nboxes = 0;
 MAX_PIXELS_TO_IGNORE = 2;
 while sum(check_p) > MAX_PIXELS_TO_IGNORE;
-  % testing, enough boxes to deal with for now
   if size(p_out, 1) >= (box_limit - n_boxes);
     break;
   end
@@ -339,9 +280,7 @@ while sum(check_p) > MAX_PIXELS_TO_IGNORE;
     p = pts_to_add(1);
     pts_to_add = pts_to_add(2:end);
 
-    % TODO: deal with ignoring boxes that go out of bounds, aka don't 
-    % add them, but remove their pixels as desired. or maybe shift the 
-    % box in bounds (maybe latter) --> for now, dropped
+    % drop boxes that go out of bounds
     [py, px] = ind2sub(imsize, p);
     ys = ((py - r):(py + r))';
     xs = ((px - r):(px + r))';
@@ -350,7 +289,6 @@ while sum(check_p) > MAX_PIXELS_TO_IGNORE;
       xs = ((max(1, px - r)):(min(cols, px + r)))';
       look(ys, xs) = 0;
       check_p = look(p_all);
-      % fprintf('skip (%d, %d)\n', py, px);
       continue;
     end
 
@@ -374,8 +312,7 @@ while sum(check_p) > MAX_PIXELS_TO_IGNORE;
       occluder = mask_in(p);
     end
     
-    assert(occluder > occluded, sprintf( ...
-      '%s l.350: occluder/occluded selection failing', mfilename));
+    assert(occluder > occluded, sprintf('%s: occluder/occluded', mfilename));
     
     %-------------------------------------------------
     % make box and add it
@@ -420,35 +357,17 @@ while sum(check_p) > MAX_PIXELS_TO_IGNORE;
     bb_new.conf_mask = double([]);
     bb_new.conf_shape = double([]);
     bb_new.sigma_shape = double([]);
-    
     bb_new.age = double(0);
-    bb_new.patches = double([]);
-    % % if exist('i1', 'var') && ~isempty(i1) && 0; % don't do for now
-    % %   bb_new.patches = double(i1(ys,xs,:));
-    % % end
-
-    bb_new.u_bg = [];
-    bb_new.v_bg = [];
-    bb_new.u_fg = [];
-    bb_new.v_fg = [];
-    bb_new.conf_uv_bg = []; % some variance
-    bb_new.conf_uv_fg = []; % some variance
-    bb_new.bg_prob_uv = [];
-    bb_new.fg_prob_uv = [];
     
     new_boxes(nboxes, 1) = bb_new;
-
     
-    % find new points and add them to make boxes for
+    % find new points to make boxes for
     p_new = edge_inds(look(edge_inds) > 0);
-    % temp gross hack
     if ~isempty(p_new);
       p_new = p_new(1);
-      % pts_to_add = cat(1, pts_to_add, p_new(:));
       pts_to_add = [pts_to_add; p_new(:)];
     end
 
-    % draw on look
     look(ys, xs) = 0;
     check_p = look(p_all);
   else
@@ -460,32 +379,12 @@ while sum(check_p) > MAX_PIXELS_TO_IGNORE;
   if ~isempty(p_out) && DRAW;
     [py, px] = ind2sub(imsize, p_out);
     p_to_draw = [py, px];
-    [out_img, box_img] = draw_boxes(mask_in, p_to_draw, r);
+    out_img = draw_boxes(mask_in, p_to_draw, r);
     fig(55); clf; imagesc(out_img);
     drawnow; pause(0.1);
   end
 end
 
-% TODO: before we do this step, need to go from some p_all to some ordered
-% list of items, ordered in the sense of going in a continuous line around
-% the object. I think this means we're gonna do some kind of walk algorithm
-
-% p = p_all(1:minspace:length(p_all));
-% [py, px] = ind2sub(imsize, p_out);
-% boxes_new = [py, px];
-% n_new = size(p_out, 1);
-
-%--------------------------------------------------------------------
-% output
-%--------------------------------------------------------------------
-% boxes       = [boxes; boxes_new];
-% layer_occd  = [lay_occd; new_layer_occd];
-% layer_occr  = [lay_occr; new_layer_occr];
-% box_ages    = [(box_ages + 1); zeros(n_new, 1)];
-% box_conf    = [box_conf; ones(n_new, 1)];
-% 
-% assert(size(boxes, 1) == size(layer_occd, 1) ...
-%   && size(boxes, 1) == size(layer_occr, 1), 'boxes size ~= layer labels size');
 if nboxes == 0; new_boxes = []; end
 end
 

@@ -31,11 +31,9 @@ else
   w_uvf = zeros( length(idx1), 1);        
 end
 
-% gpb weight:
-% ???
+% gpb weight
 if weights(3) > 0
   gpb = gpb(:);
-  % w_gpb = abs(gpb(idx1)-gpb(idx2));
   w_gpb = min(gpb(idx1),gpb(idx2));
 else
   w_gpb = zeros( length(idx1), 1);
@@ -55,11 +53,6 @@ w(isnan(w) | isinf(w)) = 0.0;
 
 %-------------------------------------------------------------------
 % divergence scaling factor
-% 
-% TODO: I shouldn't be taking this max, but really associating
-% w_divf with constraints from the forward flow, and w_divb with
-% constraints from backward flow, and using those to decide. else
-% w_divb can be high for an incorrect constraint from uvf (+vice versa)
 %-------------------------------------------------------------------
 w_div = [];
 if DIVFLAG;
@@ -70,23 +63,13 @@ if DIVFLAG;
   vector_flow_uvb = uvb(idx1,:) - uvb(idx2,:);
   vector_loc = ([x1, y1] - [x2, y2]);
   vector_loc_denom = repmat(sqrt(sum(vector_loc .^ 2, 2)), [1, 2]);
-  vector_loc = vector_loc ./ vector_loc_denom; % L2 normalization
+  vector_loc = vector_loc ./ vector_loc_denom;
   
   divf = sum(vector_flow_uvf .* vector_loc, 2);
   divb = sum(vector_flow_uvb .* vector_loc, 2);
 
   DIVDENOM = 0.5;
-  % w_divf = max(0, 1 - exp( divf / DIVDENOM ));
-  % w_divb = max(0, 1 - exp( divb / DIVDENOM ));
-  % w_div = w_divf;
-
   w_div = max(0, 1 - exp((divf - divb) / DIVDENOM));
-
-  % w_div = max(w_divf, w_divb);
-  % TODO: use both parts
-
   w_div(isnan(w_div) | isinf(w_div)) = 0.0;
-  
-  % TODO: should I incorporate distance to fall off with locations far away?
 end
 end
