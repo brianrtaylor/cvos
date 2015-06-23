@@ -136,5 +136,4 @@ for sid = seqs;
   cvos(sid{1}, PKG);
   fprintf('========= finished seq: %s =============\n', s);
 end
-exit
 end
