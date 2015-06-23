@@ -21,8 +21,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
   //----------------------------------------------------------------------
   double* I0 = (double*) mxGetPr( prhs[0] );
   const mxArray* boxes = prhs[1];
- 
-  // TODO: check if n_boxes is 0
   int n_boxes = mxGetM(prhs[1]);
 
   const char* fields[] = {"prob"};

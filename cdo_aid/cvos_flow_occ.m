@@ -8,8 +8,6 @@
 %   * m : model for computing flow
 %   * OCCPROB : min threshold for occlusions
 %   * OCCMETHOD : 
-%
-% @param: TODO: past : load old data (from prior frames) or compute new here
 %----------------------------------------------------------------------
 function [uvb, uvb_cbf, uvf, uvf_cbf, uvb_rev, uvf_rev, ...
             occb, occb_cbf, occb_cbf_prob, ...

@@ -1,9 +1,5 @@
 function [alpha_map_bg, alpha_map_fg] = boxes_to_alpha(imsize, layers, ...
   layer_occr, layer_occd, boxes, box_bg, box_fg)
-% TODO: write a function to create an alpha map with the following primary function.
-% essentially copy the other box iteration mfunctions you got
-
-
 %         box_alpha = params.PROB_BOX_FG ...
 %           * ((layer_occr(k) == past.t0.layers) .* prob_box_fg ...
 %           +  (layer_occd(k) == past.t0.layers) .* prob_box_bg);
@@ -39,7 +35,6 @@ for k = 1:n_boxes;
   alpha_add_bg = (1 - fg_mask) .* box_bg(:,:,k);
   alpha_map_bg(ys, xs) = alpha_map_bg(ys, xs) + alpha_add_bg;
   
-  % TODO: later replace with conf
   counts_fg(ys, xs) = counts_fg(ys, xs) + 1;
   counts_bg(ys, xs) = counts_bg(ys, xs) + 1;
   

@@ -599,7 +599,7 @@ for k = BEGIN:FINISH;
   fprintf('C: solving the problem: %0.3f\n', t_problem_solve);
   
   %------------------------------------------------------------------------
-  % TODO: filter the layers
+  % filter the layers
   %------------------------------------------------------------------------
   a = tic();  
   layers = postfilter_layers(layers, double(i1_bflt), 0.5);
@@ -816,8 +816,6 @@ end
 % save results
 save(out_fname, 'params');
 save(out_fname2, 'params');
-
-% unix(sprintf('rm %s', out_working_fname));
 unix(sprintf('rm %s', out_working_fname2));
 
 try

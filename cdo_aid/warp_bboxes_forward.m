@@ -4,7 +4,6 @@
 %   * r : determines box size
 %
 % @note: b.fg_prob{,_colour,_shape} all in frame t-1
-% TODO(vasiliy): can divisions result in NaNs here?
 function [boxes_out, valid] = warp_bboxes_forward(boxes, uvf, WARPSAFESPEED)
 
 if ~exist('WARPSAFESPEED'); WARPSAFESPEED = 20; end;

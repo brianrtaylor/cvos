@@ -4,11 +4,14 @@
 #include <cstdlib>
 #include <cmath>
 #include <limits>
-#include "bcv_basic.h"
 #include "bcv_diff_ops.h"
 #ifdef HAVE_OPENCV
 #include "bcv_opencv.cpp"
 using namespace cv;
+#endif
+
+#ifndef BCV_SIGN
+#define BCV_SIGN(x) (((x) > 0) - ((x) < 0)) // -1, 0, or +1
 #endif
 
 using namespace std;

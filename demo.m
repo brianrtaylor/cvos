@@ -1,4 +1,3 @@
-% TODO: use better example than cars5 because we lose the right car
 % TODO: replace cvos_lite_* with some edits and calls to cvos straight out
 % in frame 1
 
@@ -24,4 +23,4 @@ mex_setup
 cvos_run({'cars5'}, 'full');
 
 % 4. see results in "./results" folder
-% TODO: visualize results here
+

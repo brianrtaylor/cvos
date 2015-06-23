@@ -4,7 +4,6 @@ if ~exist('constraint_weights', 'var');
   constraint_weights = ones(nconstraints, 1);
 end
 
-% TODO: quick fix for visualization, but should do something else instead later
 % max_constraints_weight = (constraint_weights);
 constraint_weights = min(1.0, constraint_weights);
 weights = min(1.0, weights);

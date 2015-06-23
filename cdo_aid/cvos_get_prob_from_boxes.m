@@ -2,7 +2,6 @@ function [boxes, prob_box_fg, prob_box_bg, count_box_fg, count_box_bg, weights_b
             cvos_get_prob_from_boxes( occb_mask, past, i1_bflt, boxes, opts)
 
 [rows, cols] = size(occb_mask); imsize = [rows, cols];
-% v2struct(opts);
 
 if ~isempty(past.layers) && opts.CAUSAL && opts.BOXHELP && ~isempty(boxes);
   %----------------------------------------------------------
@@ -67,8 +66,6 @@ if ~isempty(past.layers) && opts.CAUSAL && opts.BOXHELP && ~isempty(boxes);
   %----------------------------------------------------------
   % use boxes to affect optimization
   %
-  % TODO: use box_conf to affect weights computation (more
-  %   weight to intensity or more weight to flow)
   %----------------------------------------------------------
   bb_conf = cat(1, boxes_new.conf_colour);
   bb_conf_inter = cat(1, boxes_new.conf);
@@ -103,7 +100,6 @@ if ~isempty(past.layers) && opts.CAUSAL && opts.BOXHELP && ~isempty(boxes);
     fig(56); imagesc(min(weights_box, [], 3)); drawnow; title(1);
   end
   
-  % TODO: check/debug the boxes again
   if (opts.VIS < 160);
     fprintf('displaying boxes\n');
     startDisplayImage(diagboxes(boxes));
