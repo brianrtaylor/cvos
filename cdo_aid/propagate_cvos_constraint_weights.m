@@ -1,7 +1,6 @@
 %--------------------------------------------------------------------
 % propagate_cvos_constraint_weights
 %
-%
 % @param: opts : options and parameters
 %   * DO_CONS_PERTURB : 1 to perturb constraints
 %   * CONSTRAINT_INSIDE_FG_MEMORY_FACTOR : falloff factor for constraints 

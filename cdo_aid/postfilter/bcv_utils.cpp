@@ -1,4 +1,4 @@
-//! @file bcv_basic.cpp
+//! @file bcv_utils.cpp
 #include "bcv_utils.h"
 
 //! returns time in microseconds
@@ -25,7 +25,6 @@ vector<int> choose_random_subset(int k, int n) {
         for (int i = 0; i < n; ++i) { s[i] = i; }
         return s;
     }
-    // TODO: rewrite this with set
     set<int> s_;
     while (s_.size() < k) {
         int idx = rand() % n;

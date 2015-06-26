@@ -1,4 +1,3 @@
-% TODO: use better example than cars5 because we lose the right car
 % TODO: replace cvos_lite_* with some edits and calls to cvos straight out
 % TODO: remove unnecessary stuff/steps in cross_bilateral_step_test... files (also shorten the name)
 % TODO: change name of tempsaving files (cars1_pdoresults_temporal_fg=...)
@@ -26,4 +25,4 @@ mex_setup
 cvos_run({'cars5'}, 'full');
 
 % 4. see results in "./results" folder
-% TODO: visualize results here
+

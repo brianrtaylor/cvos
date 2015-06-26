@@ -37,7 +37,6 @@ for k = 1:n_boxes;
   % combine via averaging
   prob(ys, xs) = prob(ys, xs) + box_fg(bys,bxs,k) .* box_conf(k);
   
-  % TODO: replace this 1 with something according to conf
   count(ys, xs) = count(ys, xs) + 1;
 end
 
