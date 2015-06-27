@@ -9,7 +9,7 @@ function cvos_visual(layers, ...
   constraint_weights_now_nodiv_b, constraint_weights_now_nodiv_f, ...
   constraint_weights_now_b, constraint_weights_now_f, constraints, ...
   constraint_weights, occb_cbf, occf_cbf, occb_cbf_prob, occf_cbf_prob, ...
-  weights_now, weights, imsize, uvb_cbf, uvf_cbf, ...
+  weights_now, weights, wx_vis, imsize, uvb_cbf, uvf_cbf, ...
   prob_fg, i1, i1_bflt, I1, outpath, nameStr, versiontype, seq, k, ...
   past, problem, boxes, BOX_RAD, BOXHELP, VIS, params, ...
   object_map, kappa_fg, kappa_box)
@@ -212,12 +212,12 @@ if SAVEFIGBOX;
     fig(88); clf; imagesc([fgbkappa; kappa_box_img; kappa_fg_img]); 
     axt; notick; title(tt);
   end
+  name = sprintf(nameStr, seq, k);
  
   % % uncomment to save a struct with a lot more info than just the result
   % A = v2struct(fgkappa, bkappa, fgbkappa, kappa_img, i1, problem, ...
   %   object_map, layermap, lay, layerimg, kappa_fg_img, kappa_box_img, ...
   %   prob_fg);
-  % name = sprintf(nameStr, seq, k);
   % Amat = fullfile(outpath, [name, '_fgs_', versiontype, '.mat']);
   % save(Amat, '-struct', 'A');
   
@@ -228,6 +228,38 @@ if SAVEFIGBOX;
   % % uncomment to print fg prior
   % aafg = fullfile(outpath, [name, '_fg_', versiontype, '.png']);
   % imwrite(uint8(255 * kappa_fg_img), aafg, 'png');
+  
+  % % uncomment to save weights images
+  % wxn = min(clip(weights_now, 0.0, 1.0), [], 3);
+  % wxf = min(clip(wx_vis.Wx, 0.0, 1.0), [], 3);
+  % aawx = fullfile(outpath, [name, '_wxn_old_', versiontype, '.png']);
+  % imwrite(uint8(255 * sc(wxn, 'gray')), aawx, 'png'); % old weights now
+  % aawx = fullfile(outpath, [name, '_wxf_old_', versiontype, '.png']);
+  % imwrite(uint8(255 * sc(wxf, 'gray')), aawx, 'png'); % old weights
+  % wxn = max(wx_vis.weights_now, [], 3);
+  % wxf = max(wx_vis.weights, [], 3);
+  % wxu = max(wx_vis.unity, [], 3);
+  % pwx = min(wx_vis.Wx, [], 3);
+  % 
+  % % fig grayscale
+  % aawx = fullfile(outpath, [name, '_wxn_', versiontype, '.png']);
+  % imwrite(uint8(255*sc(clip(1.0 - wxn, 0, 1), 'gray')), aawx, 'png');
+  % aawx = fullfile(outpath, [name, '_wxf_', versiontype, '.png']);
+  % imwrite(uint8(255*sc(1.0 - wxf, 'gray')), aawx, 'png');
+  % aawx = fullfile(outpath, [name, '_wxu_', versiontype, '.png']);
+  % imwrite(uint8(255*sc(wxu, 'gray')), aawx, 'png');
+  % aawx = fullfile(outpath, [name, '_pwx_', versiontype, '.png']);
+  % imwrite(uint8(255*sc(pwx, 'gray')), aawx, 'png');
+  %
+  % % fig jet
+  % aawx = fullfile(outpath, [name, '_wxn_c_', versiontype, '.png']);
+  % imwrite(uint8(255*sc(clip(wxn, 0, 1), 'jet')), aawx, 'png');
+  % aawx = fullfile(outpath, [name, '_wxf_c_', versiontype, '.png']);
+  % imwrite(uint8(255*sc(wxf, 'jet')), aawx, 'png');
+  % aawx = fullfile(outpath, [name, '_wxu_c_', versiontype, '.png']);
+  % imwrite(uint8(255*sc(wxu, 'jet')), aawx, 'png');
+  % aawx = fullfile(outpath, [name, '_pwx_c_', versiontype, '.png']);
+  % imwrite(uint8(255*sc(pwx, 'jet')), aawx, 'png');
 end
 
 %--------------------------------------------------------------------

@@ -66,10 +66,9 @@ PKG.DO_UNITY_WARP_WEIGHT = true;
 PKG.UNITYHELP = true;
 PKG.PROB_UNITY = 0.5; % dunno where this is used lol
 
-PKG.CAUSAL = 1;
-PKG.DO_FORBACKCAUSAL = false;
-
-PKG.TEST = true;
+PKG.CAUSAL = true;
+PKG.DO_FORBACKCAUSAL = false; % if true, for noncausal version
+PKG.TEST = false; % if true, doesn't process first and last frame
 
 if strcmp(model, 'fullboxfig');
   PKG.DO_FORBACKCAUSAL = false;

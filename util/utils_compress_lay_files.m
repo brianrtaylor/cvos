@@ -1,22 +1,20 @@
 % load all files corresponding to this sequence
 function lay = utils_compress_lay_files(dopath, seq, flag, rev_flag, index)
-% p = [dopath '/' seq '/'];
 p = dopath;
-files = [];
-if isempty(files)
-  % try another naming style:
-  files = dir( [p '/' seq '_*lay*_cdov_*', flag, '*.mat'] );
-end
-if isempty(files)
-  files = dir( [p '/' seq '_*lay_*dov_frame*', flag, '*.mat'] );
-end
+str_search = fullfile(p, sprintf('%s_*_lay_cvos_%s.mat', seq, flag));
+% files = dir( [p '/' seq '_*lay_cvos_' flag, '*.mat'] );
+files = dir(str_search);
+% if isempty(files)
+%   files = dir( [p '/' seq '_*lay_*dov_frame*', flag, '*.mat'] );
+% end
 lay = [];
 T = length(files);
 T2 = get_sequence_length(seq);
 if (T < T2)
-  fprintf('on %s : expected to see %d files, but only saw: %d\n', ...
+  fprintf('on %s : expected %d files, but only saw: %d\n', ...
     seq, T2, T);
   fprintf('pointless to continue.\n');
+  keyboard;
   return;
 end
 if nargin>=4 && rev_flag
