@@ -1,12 +1,7 @@
 % load all files corresponding to this sequence
-function lay = utils_compress_lay_files(dopath, seq, flag, rev_flag, index)
-p = dopath;
+function lay = utils_compress_lay_files(p, seq, flag, rev_flag, index)
 str_search = fullfile(p, sprintf('%s_*_lay_cvos_%s.mat', seq, flag));
-% files = dir( [p '/' seq '_*lay_cvos_' flag, '*.mat'] );
 files = dir(str_search);
-% if isempty(files)
-%   files = dir( [p '/' seq '_*lay_*dov_frame*', flag, '*.mat'] );
-% end
 lay = [];
 T = length(files);
 T2 = get_sequence_length(seq);
@@ -35,7 +30,8 @@ if ~exist('index','var');
     env = load(fullfile(p, files(ii).name), 'lay', 'object_map');
     if ii==1;
       lay = zeros(size(env.lay,1), size(env.lay,2), T2 ,'uint8'); 
-      obj = zeros(size(env.object_map,1), size(env.object_map,2), T2 ,'uint16');
+      obj = zeros(size(env.object_map,1), size(env.object_map,2), ...
+        T2 ,'uint16');
     end;
     lay(:,:,ii) = uint8(env.lay);
     obj(:,:,ii) = uint16(env.object_map);
@@ -46,7 +42,8 @@ else
     env = load(fullfile(p, files( index(ii) ).name), 'lay', 'object_map');
     if ii==1;
       lay = zeros(size(env.lay,1), size(env.lay,2), length(index) ,'uint8'); 
-      obj = zeros(size(env.object_map,1), size(env.object_map,2), length(index) ,'uint16');
+      obj = zeros(size(env.object_map,1), size(env.object_map,2), ...
+        length(index) ,'uint16');
     end
     lay(:,:,ii) = uint8(env.lay);
     obj(:,:,ii) = uint16(env.object_map);
