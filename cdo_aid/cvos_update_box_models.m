@@ -131,8 +131,16 @@ if opts.CAUSAL && opts.BOXHELP;
     %-------------------------------
     % prune out any bad NaN gmms
     %-------------------------------
-    bad_gmm_bg = isnan(sum(pi_bg, 1));
-    bad_gmm_fg = isnan(sum(pi_fg, 1));
+    if exist('pi_bg','var')
+        bad_gmm_bg = isnan(sum(pi_bg, 1));
+    else
+        bad_gmm_bg = [];
+    end
+    if exist('pi_fg','var')
+        bad_gmm_fg = isnan(sum(pi_fg, 1));
+    else
+        bad_gmm_fg = [];
+    end
     bad_gmm = bad_gmm_fg | bad_gmm_bg;
     all_boxes(bad_gmm) = [];
     

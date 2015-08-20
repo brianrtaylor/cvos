@@ -128,12 +128,6 @@ public:
     void print_cost();
 
 private:
-    float simplex_proj_lb;
-    float simplex_proj_ub;
-    float simplex_proj_sol;
-    int simplex_num_iters;
-    float simplex_scaling;
-
     float* sol_c;
     float* sol_y1;
     float* sol_y2;
@@ -142,9 +136,6 @@ private:
     float* tau1;
     float* weights;
     float* occweights;
-
-
-    void show_warning();
 
     void solve_y1(float* DX, float sigma);
     float solve_c(float* DTY, float* DOCCTY, float sigma, float* tau);    
