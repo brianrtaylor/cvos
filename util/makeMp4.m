@@ -1,6 +1,14 @@
 %-----------------------------------------------------------------------------
+% makeMp4
+%
 % small helper function to make your movies
 % example: avconv -r 5 -f image2 -i cars5_%03d_causal_0.png cars5_causal_0.mp4
+%
+% @param: imgpth: path to images 
+% @param: seq: sequence name and filename prefix (e.g. "cars5" above)
+% @param: endname: name on the end of the file (e.g. "causal_0" above)
+% @param: framerate: (e.g. 5 above)
+% @param: bitrate: affects video quality (higher better)
 %-----------------------------------------------------------------------------
 function makeMp4(imgpth, seq, endname, framerate, bitrate)
 
@@ -17,10 +25,8 @@ tmp_str = sprintf('.%%0%dd.png', ndigits);
 mp4_file_name = sprintf('%s_%s_%02dfps.mp4', seq, endname, framerate);
 cmd = sprintf('avconv -r %d -f image2 -i %s -b %dk %s', ...
   framerate, tmp_str, bitrate, mp4_file_name);
-% cmd = sprintf('avconv -r %d -f image2 -i %s %s', ...
-%   framerate, tmp_str, mp4_file_name); % works
 
-% setup commands to rename the files to .00{1,2,3,...}.png and back
+% commands to rename the files to .00{1,2,3,...}.png and change them back
 mvcmd = '';
 mvbackcmd = '';
 for k = 1:N;
@@ -35,7 +41,9 @@ unix(mvcmd);
 
 here = pwd();
 cd(imgpth);
-if exist(mp4_file_name, 'file'); delete(fullfile(imgpth, mp4_file_name)); end;
+if exist(mp4_file_name, 'file');
+  delete(fullfile(imgpth, mp4_file_name));
+end
 atic = tic();
 unix(cmd);
 atic = toc(atic);

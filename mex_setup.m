@@ -31,7 +31,7 @@ cd('../')
 fprintf('--------------------------------------------------------------\n')
 fprintf('  Postfiltering utilities\n' );
 fprintf('--------------------------------------------------------------\n')
-cd('cdo_aid/postfilter/')
+cd('cvos_aid/postfilter/')
 run('mex_setup')
 cd('../../')
 

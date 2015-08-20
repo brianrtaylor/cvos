@@ -716,23 +716,22 @@ for k = BEGIN:FINISH;
   fprintf('C: setting up past for next frame: %0.3f\n', t_past);
   
   
-  %------------------------------------------------------------------------
+  %---------------------------------------------------------------------------
   % learn models for boxes from segmentation (to help on next frame)
-  %------------------------------------------------------------------------  
+  %---------------------------------------------------------------------------
   a = tic();
   
   if params.CAUSAL && params.BOXHELP;  
     past.boxes = boxes;
-    boxes = cvos_update_box_models( ...
-      boxes, layers, I1lab, Dx, Dy, weights, params);
+    boxes = cvos_update_box_models(boxes, layers, I1lab, Dx, Dy, params);
   end
   
   t_box_models = toc(a);
   fprintf('C: updating box models: %0.3f\n', t_box_models);
 
-  %------------------------------------------------------------------------
+  %---------------------------------------------------------------------------
   % objects 
-  %------------------------------------------------------------------------
+  %---------------------------------------------------------------------------
   a = tic();
   
   [object_map_snap] = layers_to_detachable_objects(layers);
@@ -866,7 +865,8 @@ end
 if ~exist('ADD', 'var');
   save(out_fname, 'params');
   unix(sprintf('rm %s', out_working_fname));
-  
+
+  % create single output mat file for convenience
   try
     if params.DO_FORBACKCAUSAL;
       utils_compress_lay_files(outpath, seq, params.model, 1);
@@ -874,6 +874,15 @@ if ~exist('ADD', 'var');
     utils_compress_lay_files(outpath, seq, params.model, 0);
   catch e
     fprintf('%s: error compressing lay, obj file\n', mfilename);
+  end
+
+  % make video from result images for easy viewing
+  try
+    makeMp4(outpath, seq, sprintf('obj_%s', params.versiontype), 15); % obj
+    makeMp4(outpath, seq, sprintf('img_%s', params.versiontype), 15); % lay
+    makeMp4(outpath, seq, sprintf('cue_%s', params.versiontype), 15); % cue
+  catch e
+    fprintf('%s: error making movie\n', mfilename);
   end
 end
 end

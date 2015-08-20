@@ -30,6 +30,6 @@ cd('../')
 fprintf('--------------------------------------------------------------\n')
 fprintf('  Postfiltering utilities\n' );
 fprintf('--------------------------------------------------------------\n')
-cd('cdo_aid/postfilter/')
+cd('cvos_aid/postfilter/')
 unix('rm *.mexa64 -v');
 cd('../../')

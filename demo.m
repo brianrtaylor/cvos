@@ -1,14 +1,16 @@
-% TODO: replace cvos_lite_* with some edits and calls to cvos straight out
-% TODO: remove unnecessary stuff/steps in cross_bilateral_step_test... files (also shorten the name)
-% TODO: change name of tempsaving files (cars1_pdoresults_temporal_fg=...)
-% in frame 1
+%-----------------------------------------------------------------------------
+% demo
+%
+% this code downloads a sequence from the website and then runs the cvos
+% framework on that sequence, storing the results in the results folder
+%-----------------------------------------------------------------------------
 
-% 1. download data somewhere local
+% 1. download data
 pth = 'example_demo/';
 if ~exist(pth, 'dir'); mkdir(pth); end;
 cd(pth);
 if ~exist('moseg', 'dir') && ~exist('cars5_demo.zip', 'file');
-  unix('wget vision.ucla.edu/~btay/proj/cvos/demo/cars5_demo.zip'); % 204 MB
+  unix('wget vision.ucla.edu/~btay/proj/cvos/demo/cars5_demo.zip'); % ~204 MB
 end
 if ~exist('moseg', 'dir');
   unix('unzip cars5_demo.zip');
@@ -24,5 +26,4 @@ mex_setup
 % paths to results are editable in cdo_aid/dataPaths.m
 cvos_run({'cars5'}, 'full');
 
-% 4. see results in "./results" folder
-
+% 4. checkout the results in "./results" folder!

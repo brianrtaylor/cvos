@@ -1,3 +1,22 @@
+//----------------------------------------------------------------------------
+// learn_bbox_gmm_mex
+//
+// learns a gmm color model for pixels within a local shape classifier window
+// 
+// @param: I0 (MxNx3): RGB image to learn color models from
+// @param: layers (MxNxL): layer segmentation from current frame
+// @param: boxes: matlab struct array of local shape classifers
+// @param: NUM_GMM_CLUSTERS: number of gaussians in the mixture model
+// @param: NUM_GMM_REPETITIONS: number of times to run gmm learning
+// @param: NUM_GMM_ITERATIONS: number of iterations in run gmm learning
+// @param: FGTHRESH: foreground threshold
+// @param: BGTHRESH: background threshold
+//
+// matlab call:
+// [mu_fg, cov_fg, pi_fg, mu_bg, cov_bg, pi_bg] = learn_bbox_gmm_mex( ...
+//   I0, layers, boxes, NUM_GMM_CLUSTERS, NUM_GMM_REPETITIONS, ...
+//   NUM_GMM_ITERATIONS, FGTHRESH, BGTHRESH)
+//----------------------------------------------------------------------------
 #include <math.h>
 #include <matrix.h>
 #include <mex.h>
@@ -9,33 +28,22 @@
 #include "gmm.h" // vlfeat
 #include "cvos_common.h"
 
-using namespace std;
-
 #define LOG2PI 1.837877066409345
 
-// [mu_fg, cov_fg, pi_fg, mu_bg, cov_bg, pi_bg] = 
-//  learn_bbox_gmm_mex( I0, layers, weights, box_centers, box_radii, box_masks, 
-//    NUM_GMM_CLUSTERS, NUM_GMM_REPETITIONS, NUM_GMM_ITERATIONS)
-//
-//  training stuff:
-//  learn_box_gmm_mex( I0, occd_smooth, occr_smooth, W_binary, PTS1, PTS2, ...
-//                    EPS, NUM_GMM_CLUSTERS, NUM_GMM_REPETITIONS, NUM_GMM_ITERATIONS) 
-//
-//  @param : box_masks : npixels (in mask) x n_boxes
-//------------------------------------------------------------------------
+using namespace std;
+
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
-  //----------------------------------------------------------------------
+  //--------------------------------------------------------------------------
   // process inputs and init outputs
-  //----------------------------------------------------------------------
+  //--------------------------------------------------------------------------
   double* I0              = (double*) mxGetPr( prhs[0] );
   double* layers          = (double*) mxGetPr( prhs[1] );
-  double* weights         = (double*) mxGetPr( prhs[2] );
-  const mxArray* boxes    = prhs[3];
-  int NUM_GMM_CLUSTERS    = (int) mxGetScalar( prhs[4] );
-  int NUM_GMM_REPETITIONS = (int) mxGetScalar( prhs[5] );
-  int NUM_GMM_ITERATIONS  = (int) mxGetScalar( prhs[6] );
-  double PROB_FG_MASK_THRESH = (double) mxGetScalar( prhs[7] );
-  double PROB_BG_MASK_THRESH = (double) mxGetScalar( prhs[8] );
+  const mxArray* boxes    = prhs[2];
+  int NUM_GMM_CLUSTERS    = (int) mxGetScalar( prhs[3] );
+  int NUM_GMM_REPETITIONS = (int) mxGetScalar( prhs[4] );
+  int NUM_GMM_ITERATIONS  = (int) mxGetScalar( prhs[5] );
+  double FGTHRESH         = (double) mxGetScalar( prhs[6] );
+  double BGTHRESH         = (double) mxGetScalar( prhs[7] );
     
   mwSize* sz = (mwSize*)mxGetDimensions( prhs[0] );
   int rows = sz[0];
@@ -43,7 +51,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
   int chan = sz[2];
   if (chan != 3) { mexPrintf("not a 3-channel image\n"); return; }
 
-  int n_boxes = mxGetM(prhs[3]);
+  int n_boxes = mxGetM(prhs[2]);
 
   mwSize out_sz[3];
   out_sz[0] = 3;
@@ -80,9 +88,9 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
   int rad, diam, npxmask;
   double *means, *covariances, *priors;
 
-  //----------------------------------------------------------------------
+  //--------------------------------------------------------------------------
   // do the work
-  //----------------------------------------------------------------------
+  //--------------------------------------------------------------------------
   VlGMM* gmm = vl_gmm_new(VL_TYPE_DOUBLE, 3, NUM_GMM_CLUSTERS);
   vl_gmm_set_max_num_iterations(gmm, NUM_GMM_ITERATIONS);
   vl_gmm_set_covariance_lower_bound(gmm, 1e-3);
@@ -130,11 +138,11 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
         int midx = linear_index(brr, bcc, diam); // looks in a full box
 
         // occluder
-        if ((fg_prob[midx] > PROB_FG_MASK_THRESH) && (learn_mask[midx] == 1)) {
+        if ((fg_prob[midx] > FGTHRESH) && (learn_mask[midx] == 1)) {
           for (int u = 0; u < chan; ++u) {
             x2.push_back( I0[ linear_index(rr,cc,u,rows,cols) ] );
           }
-        } else if ((bg_prob[midx] > PROB_BG_MASK_THRESH) && (learn_mask[midx] == 1)) {
+        } else if ((bg_prob[midx] > BGTHRESH) && (learn_mask[midx] == 1)) {
           for (int u = 0; u < chan; ++u) {
             x1.push_back( I0[ linear_index(rr,cc,u,rows,cols) ] );
           }
@@ -142,16 +150,14 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
       }
     }
 
-    //-------------------------------------------------------------------
     // safe check
-    //-------------------------------------------------------------------
     int too_few1 = (x1.size()/chan <= NUM_GMM_CLUSTERS);
     int too_few2 = (x2.size()/chan <= NUM_GMM_CLUSTERS);
-    
     if (too_few1 || too_few2) { continue; }
-    //-------------------------------------------------------------------
+
+    //------------------------------------------------------------------------
     // compute gmms
-    //-------------------------------------------------------------------
+    //------------------------------------------------------------------------
     vl_gmm_cluster(gmm, &x1[0], x1.size()/chan );
 
     int ind = i * (NUM_GMM_CLUSTERS);
