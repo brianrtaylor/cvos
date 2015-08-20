@@ -23,7 +23,7 @@ mex_clean
 mex_setup
 
 % 3. run cvos_run
-% paths to results are editable in cdo_aid/dataPaths.m
+% paths to results are editable in cvos_aid/dataPaths.m
 cvos_run({'cars5'}, 'full');
 
 % 4. checkout the results in "./results" folder!
