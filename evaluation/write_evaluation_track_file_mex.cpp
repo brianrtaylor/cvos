@@ -1,3 +1,13 @@
+//----------------------------------------------------------------------------
+// write_evaluation_track_file_mex
+//
+// matlab usage: write_evaluation_track_file_mex(segmentation, out_fname);
+// Saves segmentation into an ASCII file, with same format as what is
+// used in the MOSEG evaluation software.
+//
+// @param: segmentations: the loaded segmentations for the sequence
+// @param: out_fname: output filename
+//----------------------------------------------------------------------------
 #include <math.h>
 #include <matrix.h>
 #include <mex.h>
@@ -11,12 +21,9 @@ using namespace std;
 
 int inline linear_index(int r, int c, int k, int rows, int cols);
 
-// USAGE: write_evaluation_track_file_mex( segmentation, out_fname );
-// Saves segmentation into an ASCII file, with same format as what is
-// used in the MOSEG evaluation software.
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 {
-  // ----------------------------------------------------------------------    
+  //--------------------------------------------------------------------------
   double* S   = (double*)mxGetPr( prhs[0] );
   
   mwSize* sz = (mwSize*)mxGetDimensions( prhs[0] );
@@ -36,9 +43,9 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   
   FILE* fid = fopen(fname,"w");
   if (fid == 0) { 
-      mexPrintf("file: %s\n", fname);
-      mexPrintf("could not open file.\n");
-      return;
+    mexPrintf("file: %s\n", fname);
+    mexPrintf("could not open file.\n");
+    return;
   }
   mexPrintf("%d %d %d\n", rows, cols, T);
   
@@ -47,17 +54,17 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   
   fprintf(fid, "%d\n%d\n", T, n );
   for (int tt = 0; tt < T; ++tt) { 
-      mexPrintf(".");
-      for (int rr = 0; rr < rows; ++rr) {
-          for (int cc = 0; cc < cols; ++cc) { 
-              int q = linear_index(rr,cc,tt,rows,cols);
-              double val = S[q];
-              if (!mxIsNaN(val)) {
-                  fprintf(fid, "%d %d\n", (int)val, 1);
-                  fprintf(fid, "%d %d %d\n", cc, rr, tt );
-              }
-          }
+    mexPrintf(".");
+    for (int rr = 0; rr < rows; ++rr) {
+      for (int cc = 0; cc < cols; ++cc) { 
+        int q = linear_index(rr,cc,tt,rows,cols);
+        double val = S[q];
+        if (!mxIsNaN(val)) {
+          fprintf(fid, "%d %d\n", (int)val, 1);
+          fprintf(fid, "%d %d %d\n", cc, rr, tt );
+        }
       }
+    }
   }
   fclose(fid);
   mexPrintf("\n");

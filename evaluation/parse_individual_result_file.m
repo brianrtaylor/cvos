@@ -7,6 +7,7 @@
 % @return: P, R, F: metrics for precision, recall, and f-measure
 % @return: num_obj_extracted: number of object regions with precision > 0.75
 % @return: num_obj_in_scene: number of objects detected in the whole sequence
+% @param: fname: input result file
 %-----------------------------------------------------------------------------
 function [P, R, F, num_obj_extracted, num_obj_in_scene] = ...
   parse_individual_result_file(fname)
