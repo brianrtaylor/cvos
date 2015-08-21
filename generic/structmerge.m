@@ -1,13 +1,13 @@
-%----------------------------------------------------------------------------%
+%-----------------------------------------------------------------------------
 % structmerge(s1, s2)
 %
 % merges structures s1 and s2, replacing all fields in s1 with values in s2
 % when a collision occurs. If subfields are structs, it's done recursively
 % 
-% @param: s1 : input struct
-% @param: s2 : input struct whose fields win in collision
-% @return: sout : output struct with merged fields
-%----------------------------------------------------------------------------%
+% @return: sout: output struct with merged fields
+% @param: s1: input struct
+% @param: s2: input struct whose fields win in collision
+%-----------------------------------------------------------------------------
 function sout = structmerge(s1, s2)
 sout = s1;
 for f = fieldnames(s2)';

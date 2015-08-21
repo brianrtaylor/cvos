@@ -102,63 +102,22 @@ else
     fprintf('results files are in: %s\n', outpath);
     return;
   end
-  %-----------------------------------------------------------------------
-  % first frame init, for storying "history"
-  %-----------------------------------------------------------------------
-  past = struct;
-  past.uvf_cbf = [];
-  past.uvf = [];
-  past.uvf_rev = [];
+
+  %--------------------------------------------------------------------------
+  % some initialization
+  %--------------------------------------------------------------------------
+  past = struct_past;
   
-  past.uvb = [];
-  past.uvb_rev = [];
-  past.uvf = [];
-  past.uvf_rev = [];
-  
-  past.occf_cbf = [];
-  past.occf_rev = [];
-  
-  past.constraints_b = [];
-  past.constraint_weights_b = [];
-  past.constraints_causal_b = [];
-  past.constraint_weights_causal_b = [];
-  past.constraints_f = [];
-  past.constraint_weights_f = [];
-  past.constraints_causal_f = [];
-  past.constraint_weights_causal_f = [];
-  
-  past.weights = [];
-  past.constraints = [];
-  past.constraint_weights = [];
-  past.constraint_ages = [];
-  past.prob_fg = [];
-  past.xi_b = [];
-  past.xi_f = [];
-  past.layers = [];
-  past.prob_fg = [];
-  past.prob_fg_layer = [];
-  
-  past.unity = [];
-  past.unity_layer = [];
-  
-  % things warped to current domain in past, are called past.t0.
-  past.t0.layers = [];
-  past.t0.weights = [];
-  
-  %-----------------------------------------------------------------------
   % adding to params struct
-  %-----------------------------------------------------------------------
   GMMPKG = struct;
   GMMPKG.cons_perturb = params.CONS_PERTURB;
   params.GMMPKG = GMMPKG;
   params.edge_model = edge_model;
   
-  %-----------------------------------------------------------------------
   % problem setup
-  %-----------------------------------------------------------------------
   problem = struct;
-  problem.sigma_c = 0.90/sqrt(8.0);
-  problem.sigma_y = 0.90/sqrt(8.0);
+  problem.sigma_c = 0.90 / sqrt(8.0);
+  problem.sigma_y = 0.90 / sqrt(8.0);
   problem.max_iterations = 8000;
   problem.verbosity = 5000;
   problem.fx_tolerance = 0;
@@ -166,26 +125,24 @@ else
   problem.SOLVE_PIXELWISE = 1;
   problem.layer_upper_bound = 3;
   problem.imsize = imsize;
-  problem.nnodes = prod(imsize(1:2));
-  problem.nedges = 2*prod(imsize(1:2));
-  problem.tau1 = params.TAU1 * ones(problem.nnodes, 1);
+  problem.nnodes = rows * cols;
+  problem.nedges = 2 * rows * cols;
+  problem.tau1 = params.TAU1 * ones(rows * cols, 1);
   
-  %-----------------------------------------------------------------------
-  % boxes
-  %-----------------------------------------------------------------------
-  % useful values
+  % local shape classifiers
   [Dx, Dy, dx_inds, dy_inds] = make_difference_operator(imsize);
-  
-  % using boxes for segmentation
-  boxes = []; I1lab = []; objects = [];
+  boxes = []; 
+  I1lab = []; 
+  objects = [];
   object_map = zeros(imsize);
-  
+ 
+  % general settings
   processed_prior_frame = 1;
   checkpoint_timer = params.CHECKPOINT;
   
-  %-----------------------------------------------------------------------
+  %--------------------------------------------------------------------------
   % load from existing work if a causal model is in use
-  %-----------------------------------------------------------------------
+  %--------------------------------------------------------------------------
   if params.CAUSAL && ~FXF;
     checkpointFileName = sprintf('%s_*.mat', out_fname);
     checkpointFiles = dir(checkpointFileName);
@@ -218,17 +175,17 @@ else
   end
 end
 
-%=============================================================================
+%-----------------------------------------------------------------------------
 % run the sequence
-%=============================================================================
+%-----------------------------------------------------------------------------
 BEGIN = BEGIN + 1;
 FINISH = T - 1;
 if BEGIN > FINISH; FINISH = BEGIN; end;
 for k = BEGIN:FINISH;
   fprintf('================== time: %d / %d ===============\n', k, FINISH);
-  %------------------------------------------------------------------
+  %---------------------------------------------------------------------------
   % prevent repeated work for fxf model
-  %------------------------------------------------------------------  
+  %---------------------------------------------------------------------------
   if FXF && k < FINISH;    
     outResFile = fullfile(outpath, sprintf(nameStr, seq, k));
     if exist([outResFile, '_lay_', params.versiontype, '.mat'], 'file');
@@ -239,9 +196,9 @@ for k = BEGIN:FINISH;
     % load appropriate stuff
     if processed_prior_frame == 0;
       I1 = imread(fullfile(img_path, files(k).name));
-      I2 = imread(fullfile(img_path, files(k+1).name));
-      if (size(I1,3)==1), I1 = repmat(I1,[1 1 3]); end;
-      if (size(I2,3)==1), I2 = repmat(I2,[1 1 3]); end;
+      I2 = imread(fullfile(img_path, files(k + 1).name));
+      if (size(I1, 3)==1), I1 = repmat(I1,[1 1 3]); end;
+      if (size(I2, 3)==1), I2 = repmat(I2,[1 1 3]); end;
       i1 = im2double(rgb2gray(I1));
       i2 = im2double(rgb2gray(I2));
     end
@@ -250,16 +207,15 @@ for k = BEGIN:FINISH;
     processed_prior_frame = 1;
   end
 
-  %------------------------------------------------------------------
+  %---------------------------------------------------------------------------
   % read 1 new image + pre-processing
-  %------------------------------------------------------------------
+  %---------------------------------------------------------------------------
   a = tic();
-
   if ~exist('ADD', 'var');
     % transition from t --> t+1
     [I0, I1, i0, i1] = deal(I1, I2, i1, i2);
-    I2 = imread(fullfile(img_path, files(k+1).name));
-    if (size(I2,3)==1), I2 = repmat(I2,[1 1 3]); end;
+    I2 = imread(fullfile(img_path, files(k + 1).name));
+    if (size(I2, 3) == 1), I2 = repmat(I2, [1 1 3]); end;
     i2 = im2double(rgb2gray(I2));
     I0lab = I1lab;
 
@@ -272,8 +228,8 @@ for k = BEGIN:FINISH;
     if k == 1;
       I1 = imread(fullfile(img_path, files(k).name));
       I2 = imread(fullfile(img_path, files(k + 1).name));
-      if (size(I1,3)==1), I1 = repmat(I1,[1 1 3]); end;
-      if (size(I2,3)==1), I2 = repmat(I2,[1 1 3]); end;
+      if (size(I1, 3) == 1), I1 = repmat(I1, [1 1 3]); end;
+      if (size(I2, 3) == 1), I2 = repmat(I2, [1 1 3]); end;
 
       [rows, cols, ~] = size(I1);
       imsize = [rows,cols]; uvsize = [rows,cols,2];
@@ -283,118 +239,105 @@ for k = BEGIN:FINISH;
       % pre-processing on current t
       I1_bflt = recursive_bf_mex(I1, 0.01, 0.1, 1, 5);
       i1_bflt = im2double(I1_bflt);
-      I1lab = vl_xyz2lab(vl_rgb2xyz( uint8(i1_bflt*255) ));
+      I1lab = vl_xyz2lab(vl_rgb2xyz( uint8(i1_bflt * 255) ));
     else
       I1 = imread(fullfile(img_path, files(k).name));
       I0 = imread(fullfile(img_path, files(k - 1).name));
-      if (size(I1,3)==1), I1 = repmat(I1,[1 1 3]); end;
-      if (size(I0,3)==1), I0 = repmat(I0,[1 1 3]); end;
+      if (size(I1, 3) == 1), I1 = repmat(I1, [1 1 3]); end;
+      if (size(I0, 3) == 1), I0 = repmat(I0, [1 1 3]); end;
 
       [rows, cols, ~] = size(I1);
-      imsize = [rows,cols]; uvsize = [rows,cols,2];
+      imsize = [rows, cols]; uvsize = [rows, cols, 2];
       i1 = im2double(rgb2gray(I1)); i0 = im2double(rgb2gray(I0));
       I2 = zeros(rows, cols, 3); i2 = zeros(imsize); I2lab = I2; 
 
       % pre-processing on current t
       I1_bflt = recursive_bf_mex(I1, 0.01, 0.1, 1, 5);
       i1_bflt = im2double(I1_bflt);
-      I1lab = vl_xyz2lab(vl_rgb2xyz( uint8(i1_bflt*255) ));
+      I1lab = vl_xyz2lab(vl_rgb2xyz( uint8(i1_bflt * 255) ));
       I0_bflt = recursive_bf_mex(I0, 0.01, 0.1, 1, 5);
       i0_bflt = im2double(I0_bflt);
-      I0lab = vl_xyz2lab(vl_rgb2xyz( uint8(i0_bflt*255) ));
+      I0lab = vl_xyz2lab(vl_rgb2xyz( uint8(i0_bflt * 255) ));
     end
   end
 
-  
   E = edgesDetect(I1_bflt, edge_model.model);
-  EdgeDollar = 0.75*(1-E);
+  EdgeDollar = 0.75 * (1.0 - E);
   
-  t_preprocess = toc(a);
-  fprintf('C: preprocessing images: %0.3f\n', t_preprocess);
+  tm.preprocess = toc(a);
+  fprintf('C: preprocessing images: %0.3f\n', tm.preprocess);
 
-  %------------------------------------------------------------------
+  %---------------------------------------------------------------------------
   % flow + occlusions + pre-processing
-  %------------------------------------------------------------------
+  %---------------------------------------------------------------------------
   a = tic();
-  [uvb, uvb_cbf, uvf, uvf_cbf, uvb_rev, uvf_rev, ...
-    ~, occb_cbf, occb_cbf_prob, ~, occf_cbf, occf_cbf_prob, ~, occf_rev] = ...
+  [uvb, uvb_cbf, uvf, uvf_cbf, uvb_rev, uvf_rev, ~, occb_cbf, ...
+    occb_cbf_prob, ~, occf_cbf, occf_cbf_prob, ~, occf_rev] = ...
     cvos_flow_occ(flow_path, flow_files, seq, k, T, ...
     i0, i1, i2, I0, I1, I2, past, params);
-  
-  t_flowocc_cbf = toc(a);
-  fprintf('C: calc flow and occlusions (cbf): %0.3f\n', t_flowocc_cbf);
+  tm.flowocc_cbf = toc(a);
+  fprintf('C: calc flow and occlusions (cbf): %0.3f\n', tm.flowocc_cbf);
   a = tic();
-
   uvf_bflt = recursive_bf_mex(double(uvf), 0.05, 0.004, 0, 10);
   uvb_bflt = recursive_bf_mex(double(uvb), 0.05, 0.004, 0, 10);
   uvf_cbf_bflt = recursive_bf_mex(double(uvf_cbf), 0.05, 0.004, 0, 10);
   uvb_cbf_bflt = recursive_bf_mex(double(uvb_cbf), 0.05, 0.004, 0, 10);
   uvf_rev_bflt = recursive_bf_mex(double(uvf_rev), 0.05, 0.004, 0, 10);
   uvb_rev_bflt = recursive_bf_mex(double(uvb_rev), 0.05, 0.004, 0, 10);
+  tm.flowocc_bf = toc(a);
+  fprintf('C: calc flow and occlusions (bf): %0.3f\n', tm.flowocc_bf);
   
-  t_flowocc_bf = toc(a);
-  fprintf('C: calc flow and occlusions (bf): %0.3f\n', t_flowocc_bf);
-  
-  %------------------------------------------------------------------
+  %---------------------------------------------------------------------------
   % layers put into the current frame reference frame
-  %------------------------------------------------------------------
+  %---------------------------------------------------------------------------
   a = tic();
-  
   occb_mask = occb_cbf_prob > params.OCCPROBLAYERTHRESH;
-  
   if ~isempty(past.layers) && params.CAUSAL;
     fprintf('removing occb mask.\n')
     layers_t0 = round(utils_warp_image(past.layers, uvb_cbf_bflt));
     [past.t0.layers] = remove_occb_mask( layers_t0, occb_mask, 0, 0);
   end
-  
-  t_layersnow = toc(a);
-  fprintf('C: layers warped to the current frame: %0.3f\n', t_layersnow);
+  tm.layersnow = toc(a);
+  fprintf('C: layers warped to the current frame: %0.3f\n', tm.layersnow);
 
-  %------------------------------------------------------------------
+  %---------------------------------------------------------------------------
   % boxes to probability images
-  %------------------------------------------------------------------
+  %---------------------------------------------------------------------------
   a = tic();
-  
   if ~isempty(past.layers) && params.CAUSAL;
     fprintf('C: computing local shape classifiers.\n');  
     [boxes, prob_box_fg, ~, ~, ~, weights_box] = cvos_get_prob_from_boxes( ...
       occb_mask, past, I1lab, boxes, params);
   end
+  tm.box_probs = toc(a);
+  fprintf('C: compute prob box images: %0.3f\n', tm.box_probs);
   
-  t_box_probs = toc(a);
-  fprintf('C: compute prob box images: %0.3f\n', t_box_probs);
-  
-  %------------------------------------------------------------------
+  %---------------------------------------------------------------------------
   % constraints now
-  %------------------------------------------------------------------
+  %---------------------------------------------------------------------------
   a = tic();
-  
   [constraints_now_b, constraint_weights_now_b] ...
     = make_cvos_constraints(occb_cbf_prob, uvb_cbf_bflt, uvb_rev_bflt, ...
     params.OCCPROB, params.MINCONSTRAINTDIST, params.VIS, 16);
   [constraints_now_f, constraint_weights_now_f] ...
     = make_cvos_constraints(occf_cbf_prob, uvf_cbf_bflt, uvf_rev_bflt, ...
     params.OCCPROB, params.MINCONSTRAINTDIST, params.VIS);
-  
-  t_constraints_now = toc(a);
-  fprintf('C: constraints now: %0.3f\n', t_constraints_now);
+  tm.constraints_now = toc(a);
+  fprintf('C: constraints now: %0.3f\n', tm.constraints_now);
 
-  %------------------------------------------------------------------
+  %---------------------------------------------------------------------------
   % weights now
-  %------------------------------------------------------------------
+  %---------------------------------------------------------------------------
   a = tic();
-  
   [weights_now, weights_inds] = make_cvos_weights_current_frame( ...
     I1lab, uvb_cbf_bflt, uvf_cbf_bflt, dx_inds, dy_inds, ...
     EdgeDollar, params);
+  tm.weights_now = toc(a);
+  fprintf('C: weights now: %0.3f\n', tm.weights_now);  
   
-  t_weights_now = toc(a);
-  fprintf('C: weights now: %0.3f\n', t_weights_now);  
-  
-  %------------------------------------------------------------------
+  %---------------------------------------------------------------------------
   % constraints weights now
-  %------------------------------------------------------------------
+  %---------------------------------------------------------------------------
   a = tic();
   if ~isempty(constraints_now_b);
     [constraints_now_b, constraint_weights_now_b, ...
@@ -413,15 +356,13 @@ for k = BEGIN:FINISH;
   else
     constraint_weights_now_nodiv_f = [];
   end
+  tm.constraint_weights_now = toc(a);
+  fprintf('C: constraint weights now: %0.3f\n', tm.constraint_weights_now);
   
-  t_constraint_weights_now = toc(a);
-  fprintf('C: constraint weights now: %0.3f\n', t_constraint_weights_now);
-  
-  %------------------------------------------------------------------
+  %---------------------------------------------------------------------------
   % weights from prior frame
-  %------------------------------------------------------------------
+  %---------------------------------------------------------------------------
   a = tic();
-  
   if ~isempty(past.weights) && params.CAUSAL && params.WEIGHTHELP;
     [weights, wx_l, wy_l, past] = propagate_cvos_weights( ...
       weights_now, uvb_cbf_bflt, past, occb_mask, ...
@@ -429,31 +370,27 @@ for k = BEGIN:FINISH;
   else
     weights = weights_now;
   end
-
-  t_weights_propagate = toc(a);
-  fprintf('C: weights propagated: %0.3f\n', t_weights_propagate);
+  tm.weights_propagate = toc(a);
+  fprintf('C: weights propagated: %0.3f\n', tm.weights_propagate);
   
-  %---------------------------------------------------------------------
+  %---------------------------------------------------------------------------
   % Block that introduces a layer unity prior
-  %---------------------------------------------------------------------
+  %---------------------------------------------------------------------------
   a = tic();
-  
   if ~isempty(past.unity) && params.UNITYHELP && params.CAUSAL ...
     && params.PROB_UNITY > 0;
-    unity = cvos_unity_prior(past, uvb_bflt, uvb_cbf_bflt, ...
-      wx_l, wy_l, occb_mask, k, params);
+    unity = cvos_unity_prior(past, uvb_bflt, uvb_cbf_bflt, wx_l, wy_l, ...
+      occb_mask, k, params);
   else
     unity = zeros(uvsize);
   end
+  tm.unity = toc(a);
+  fprintf('C: unity prior: %0.3f\n', tm.unity);
   
-  t_unity = toc(a);
-  fprintf('C: unity prior: %0.3f\n', t_unity);
-  
-  %------------------------------------------------------------------
+  %---------------------------------------------------------------------------
   % constraints from prior frame
-  %------------------------------------------------------------------
+  %---------------------------------------------------------------------------
   a = tic();
-  
   if ~exist('prob_box_fg', 'var'); prob_box_fg = []; end;
   
   if ~isempty(past.constraints_b) && params.CAUSAL && params.CONSTRAINTHELP;
@@ -495,28 +432,25 @@ for k = BEGIN:FINISH;
   constraint_inds_f = constraint_inds( ...
     (nconstraints_b+1):(nconstraints_b+nconstraints_f));
   
-  t_constraints_propagate = toc(a);
-  fprintf('C: constraints propagate: %0.3f\n', t_constraints_propagate);
+  tm.constraints_propagate = toc(a);
+  fprintf('C: constraints propagate: %0.3f\n', tm.constraints_propagate);
 
-  %---------------------------------------------------------------------
+  %---------------------------------------------------------------------------
   % Block that introduces a ``layer-driven foreground prior''
-  %---------------------------------------------------------------------    
+  %---------------------------------------------------------------------------
   a = tic();
-  
   if ~isempty(past.prob_fg) && params.CAUSAL && params.PROB_FG > 0;
     prob_fg = cvos_fg_prior(past, uvb_cbf_bflt, occb_mask, params); 
   else
     prob_fg = zeros(imsize);
   end
-     
-  t_fgprior = toc(a);
-  fprintf('C: foreground prior: %0.3f\n', t_fgprior);
+  tm.fgprior = toc(a);
+  fprintf('C: foreground prior: %0.3f\n', tm.fgprior);
 
-  %------------------------------------------------------------------
+  %---------------------------------------------------------------------------
   % solve problem
-  %------------------------------------------------------------------
+  %---------------------------------------------------------------------------
   a = tic();
-
   % creates fake constraints if none exist to keep running
   if isempty(constraints);
     problem.constraints = [[1,2];[2,3]]; 
@@ -528,9 +462,7 @@ for k = BEGIN:FINISH;
     problem.lambda = params.LAMBDA * double(constraint_weights);
   end
   
-  %------------------------------------------------------------------
   % problem.Wx (weights)
-  %------------------------------------------------------------------
   if params.CAUSAL && params.BOXHELP && ~isempty(boxes);
     weights_b4 = weights;
     weights = min(weights, max(0.0, ...
@@ -547,7 +479,6 @@ for k = BEGIN:FINISH;
       imb = [weights_b4(:, :, 1), weights_b4(:, :, 2), ...
         max(weights_b4, [], 3)];
       imc = [weights(:, :, 1), weights(:, :, 2), max(weights, [], 3)];
-      % box weights, weightsb4, weights+boxweights
       fig(9); clf; sc([ima; imb; imc], 'jet', [0, 2]); drawnow;
     end
   end
@@ -574,22 +505,17 @@ for k = BEGIN:FINISH;
     u_img     = max(0.0, unity - weights);
     w_cut_img = max(0.0, 1.0 - cut_img);
     w_img     = w_cut_img + u_img;
-    
     im1 = [unity(:, :, 1)    , unity(:, :, 2)    , max(unity, [], 3)];
     im2 = [weights(:, :, 1)  , weights(:, :, 2)  , max(weights, [], 3)];
     im3 = [u_img(:, :, 1)    , u_img(:, :, 2)    , max(u_img, [], 3)];
     im4 = [cut_img(:, :, 1)  , cut_img(:, :, 2)  , max(cut_img, [], 3)];
     im5 = [w_cut_img(:, :, 1), w_cut_img(:, :, 2), min(w_cut_img, [], 3)];
     im6 = [w_img(:, :, 1)    , w_img(:, :, 2)    , min(w_img, [], 3)];
-    
-    % unity, edge_weight, unity-edge, edge-unity, cuts, final combo
     im_all = [[im1,im2];[im3,im4];[im5,im6]];
     fig(8); clf; sc(im_all, [0, 2], 'jet'); drawnow;
   end
 
-  %------------------------------------------------------------------
   % problem.kappa (fg prior)
-  %------------------------------------------------------------------
   fg_kappa = zeros(imsize);
   box_kappa = zeros(imsize);
   if params.CAUSAL && ~isempty(past.layers) ...
@@ -617,64 +543,56 @@ for k = BEGIN:FINISH;
         npx = rows*cols;
         kappa_img(b) = 0.5 * kappa_img(b) + 0.5;
         kappa_img(b + npx) = 0.5 * kappa_img(b + npx) + 0.5;
-        kappa_img(b + 2*npx) = 0.5 * kappa_img(b + 2*npx) + 0.5;
+        kappa_img(b + 2 * npx) = 0.5 * kappa_img(b + 2 * npx) + 0.5;
       end
       fig(5); clf; imagesc(kappa_img);
-      title(sprintf('problem.kappa (t = %d): %0.6f', ...
-        k, max(vec(problem.kappa))));
+      title(sprintf('%d: problem.kappa = %0.6f', k, max(vec(problem.kappa))));
       drawnow;
     end
   else
     problem.USE_TEMPORAL_PENALTY = 0;
     problem.kappa = [];
   end
+
   % weight for causal occlusion constraint
   if ~isempty(past.layers) && params.CAUSAL;
     problem.init_layers = past.t0.layers(:);
   end
   
-  t_problem_setup = toc(a);
-  fprintf('C: setting up the problem: %0.3f\n', t_problem_setup);
-  
+  tm.problem_setup = toc(a);
+  fprintf('C: setting up the problem: %0.3f\n', tm.problem_setup);
+ 
+  % run solver
   a = tic();
   layers = pd_wrapper(problem);
   layers = reshape(double(layers), imsize);
-  t_problem_solve = toc(a);
-  fprintf('C: solving the problem: %0.3f\n', t_problem_solve);
+  tm.problem_solve = toc(a);
+  fprintf('C: solving the problem: %0.3f\n', tm.problem_solve);
   
-  %------------------------------------------------------------------------
   % filter the layers
-  %------------------------------------------------------------------------
   a = tic();  
   layers = postfilter_layers(layers, double(i1_bflt), 0.5);
-  t_postfilter = toc(a);
-  fprintf('C: postfiltering: %0.3f\n', t_postfilter);
-  
-  %------------------------------------------------------------------------
+  tm.postfilter = toc(a);
+  fprintf('C: postfiltering: %0.3f\n', tm.postfilter);
 
-  %------------------------------------------------------------------------
+  %---------------------------------------------------------------------------
   % data to be used in the next iteration
-  %------------------------------------------------------------------------
+  %---------------------------------------------------------------------------
   a = tic();
-  
   past.layers               = round(layers);
   past.weights              = weights;
   past.unity                = unity;
-  
   past.constraints          = constraints;
   past.constraint_weights   = constraint_weights;
   past.constraints_b        = constraints_b;
   past.constraint_weights_b = constraint_weights_b;
   past.constraints_f        = constraints_f;
   past.constraint_weights_f = constraint_weights_f;
-
-  % flows and such
-  past.uvf            = uvf;
-  past.uvf_rev        = uvf_rev;
-  past.occf_cbf       = occf_cbf;
-  past.occf_rev       = occf_rev;
-  
-  past.uvf_cbf_bflt   = uvf_cbf_bflt;
+  past.uvf                  = uvf;
+  past.uvf_rev              = uvf_rev;
+  past.occf_cbf             = occf_cbf;
+  past.occf_rev             = occf_rev;
+  past.uvf_cbf_bflt         = uvf_cbf_bflt;
 
   mag_uvf = sqrt(sum(uvf_cbf_bflt .* uvf_cbf_bflt, 3));
   mag_uvf_non_trivial = mag_uvf(mag_uvf > params.TINY_UV);
@@ -683,9 +601,7 @@ for k = BEGIN:FINISH;
   past.w_warp_uvf   = exp( -sqrt(sum(uvf_cbf_bflt .^ 2, 3)) / max( ...
     sqrt(params.WARP_SAFESPEEDSQUARED), past.w_warp_uvf_denom));
   
-  %------------------------------------------------------------------------
   % foreground map to be used in the next iteration
-  %------------------------------------------------------------------------
   past.prob_fg_layer = utils_get_foreground_map(layers, 0.8);
 
   if params.RUNNING_FG_PRIOR && params.CAUSAL;
@@ -694,16 +610,14 @@ for k = BEGIN:FINISH;
     past.prob_fg = past.prob_fg_layer;
   end
 
-  %------------------------------------------------------------------------
   % extract \xi
-  %------------------------------------------------------------------------
   nconstraints = size(constraints, 1);
   if nconstraints > 0;
     Docc = sparse([(1:nconstraints)'; (1:nconstraints)'],...
-      [constraints(:,1); constraints(:,2)],...
-      [+ones(nconstraints,1); -ones(nconstraints,1)],...
-      nconstraints, problem.nnodes); %size of matrix
-    past.xi = round(clip(1 - Docc * layers(:), 0, 2));   
+      [constraints(:, 1); constraints(:, 2)],...
+      [+ones(nconstraints, 1); -ones(nconstraints, 1)],...
+      nconstraints, problem.nnodes);
+    past.xi = round(clip(1.0 - Docc * layers(:), 0, 2));
     past.xi_b = past.xi(constraint_inds_b);
     past.xi_f = past.xi(constraint_inds_f);
   else
@@ -712,46 +626,38 @@ for k = BEGIN:FINISH;
     past.xi_f = [];
   end
   
-  t_past = toc(a);
-  fprintf('C: setting up past for next frame: %0.3f\n', t_past);
-  
+  tm.past = toc(a);
+  fprintf('C: setting up past for next frame: %0.3f\n', tm.past);
   
   %---------------------------------------------------------------------------
-  % learn models for boxes from segmentation (to help on next frame)
+  % update models for boxes from segmentation
   %---------------------------------------------------------------------------
   a = tic();
-  
   if params.CAUSAL && params.BOXHELP;  
     past.boxes = boxes;
     boxes = cvos_update_box_models(boxes, layers, I1lab, Dx, Dy, params);
   end
-  
-  t_box_models = toc(a);
-  fprintf('C: updating box models: %0.3f\n', t_box_models);
+  tm.box_models = toc(a);
+  fprintf('C: updating box models: %0.3f\n', tm.box_models);
 
   %---------------------------------------------------------------------------
-  % objects 
+  % update objects from segmentation
   %---------------------------------------------------------------------------
   a = tic();
-  
   [object_map_snap] = layers_to_detachable_objects(layers);
   [objects, object_map] = cvos_update_objects( ...
     objects, object_map, object_map_snap, uvb_bflt, uvf_bflt);
+  tm.objects_update = toc(a);
+  fprintf('C: updating objects: %0.3f\n', tm.objects_update);
   
-  t_objects_update = toc(a);
-  fprintf('C: updating objects: %0.3f\n', t_objects_update);
-  
-  %------------------------------------------------------------------------
+  %---------------------------------------------------------------------------
   % objects top pre-processing for mean flow images
-  %------------------------------------------------------------------------
+  %---------------------------------------------------------------------------
   a = tic();
-  
   if ~isempty(past.layers) && params.CAUSAL; 
     object_mean_uvf_map = cvos_get_object_flow_maps(objects, object_map);
-    
     uvdiff = uvf_cbf_bflt - object_mean_uvf_map;
     fg_uvf_diff = sqrt(sum(uvdiff .^ 2, 3));
-    
     past.w_fg_uvf = exp( -fg_uvf_diff / past.w_warp_uvf_denom);
     past.w_fg_uvf(isnan(past.w_fg_uvf)) = 1.0;   
   else
@@ -759,36 +665,29 @@ for k = BEGIN:FINISH;
     past.fg_uvf_diff = zeros(imsize);
     past.w_fg_uvf = ones(imsize);
   end
-  
-  t_object_uvf = toc(a);
-  fprintf('C: updating objects flow maps: %0.3f\n', t_object_uvf);
+  tm.object_uvf = toc(a);
+  fprintf('C: updating objects flow maps: %0.3f\n', tm.object_uvf);
 
-  %------------------------------------------------------------------------
+  %---------------------------------------------------------------------------
   % visualization 
-  %------------------------------------------------------------------------
+  %---------------------------------------------------------------------------
   a = tic();
   wx_vis = v2struct(weights_now, weights_cut, ...
     weights_unity, unity, weights, Wx);
-  
   cvos_visual(layers, ...
     constraints_causal_b, constraints_causal_f, constraint_weights_old_b, ...
     constraint_weights_old_f, constraints_now_b, constraints_now_f, ...
     constraint_weights_now_nodiv_b, constraint_weights_now_nodiv_f, ...
     constraint_weights_now_b, constraint_weights_now_f, constraints, ...
     constraint_weights, occb_cbf, occf_cbf, occb_cbf_prob, occf_cbf_prob, ...
-    max(0.0, 1.0 - weights_now), ...
-    max(0.0, 1.0 - weights), wx_vis, imsize, uvb_cbf, uvf_cbf, ...
-    prob_fg, i1, i1_bflt, I1, outpath, nameStr, params.versiontype, ...
-    seq, k, past, problem, boxes, ...
-    params.BOX_RAD, params.BOXHELP, params.VIS, params, ...
-    object_map, fg_kappa, box_kappa);
+    max(0.0, 1.0 - weights_now), max(0.0, 1.0 - weights), wx_vis, imsize, ...
+    uvb_cbf, uvf_cbf, prob_fg, i1, i1_bflt, I1, outpath, nameStr, ...
+    params.versiontype, seq, k, past, problem, boxes, params.BOX_RAD, ...
+    params.BOXHELP, params.VIS, params, object_map, fg_kappa, box_kappa);
+  tm.vis = toc(a);
+  fprintf('C: visualization: %0.3f\n', tm.vis);
   
-  t_vis = toc(a);
-  fprintf('C: visualization: %0.3f\n', t_vis);
-  
-  %------------------------------------------------------------------------
   % prevents repeated computation
-  %------------------------------------------------------------------------
   if params.CAUSAL && ~FXF && checkpoint_timer <= 0;
     checkpointFileName = sprintf('%s_%06d.mat', out_fname, k);
     save(checkpointFileName, 'k', 'past', 'boxes', ...
@@ -797,53 +696,17 @@ for k = BEGIN:FINISH;
   end
   checkpoint_timer = checkpoint_timer - 1;
   
-  %------------------------------------------------------------------------
   % show timing
-  %------------------------------------------------------------------------
-  if params.VIS < 1000;
-    rest_time = t_preprocess + t_layersnow + t_box_probs ...
-      + t_constraints_now + t_weights_now + t_constraint_weights_now ...
-      + t_weights_propagate + t_unity + t_constraints_propagate ...
-      + t_fgprior + t_problem_setup ...
-      + t_postfilter + t_past + t_box_models + t_objects_update ...
-      + t_object_uvf + t_vis + t_flowocc_cbf + t_flowocc_bf;
-    total_time = rest_time + t_problem_solve;
-    fprintf('--------- timing info ---------\n');
-    fprintf('total time:              %02.3f\n', total_time);
-    fprintf('solver:                  %02.3f\n', t_problem_solve); 
-    fprintf('rest:                    %02.3f\n', rest_time);
-    fprintf('--------- ----------- ---------\n');
-    fprintf('preprocessing images:    %02.3f\n', t_preprocess);
-    fprintf('flow & occlusions cbf:   %02.3f\n', t_flowocc_cbf);
-    fprintf('flow & occlusions bf:    %02.3f\n', t_flowocc_bf);
-    fprintf('layers warped to now:    %02.3f\n', t_layersnow);
-    fprintf('calc prob box images:    %02.3f\n', t_box_probs);
-    fprintf('constraints now:         %02.3f\n', t_constraints_now);
-    fprintf('weights now:             %02.3f\n', t_weights_now);
-    fprintf('constraint weight now:   %02.3f\n', t_constraint_weights_now);
-    fprintf('weights propagation:     %02.3f\n', t_weights_propagate);
-    fprintf('unity prior:             %02.3f\n', t_unity);
-    fprintf('constraints weight prop: %02.3f\n', t_constraints_propagate);
-    fprintf('foreground prior:        %02.3f\n', t_fgprior);
-    fprintf('problem setup:           %02.3f\n', t_problem_setup);
-    fprintf('problem solving:         %02.3f\n', t_problem_solve);
-    fprintf('postfiltering:           %02.3f\n', t_postfilter);
-    fprintf('update past:             %02.3f\n', t_past);
-    fprintf('update box models:       %02.3f\n', t_box_models);
-    fprintf('update objects:          %02.3f\n', t_objects_update);
-    fprintf('update object uvf maps:  %02.3f\n', t_object_uvf);
-    fprintf('visualization + saving:  %02.3f\n', t_vis);
-    fprintf('----------- ----------- -------\n');    
-  end
+  if params.VIS < 1000; cvos_show_timing_info(tm); end;
   
-  %--------------------------------------------------------------------------
-  % if we should run the first or the last frame
-  %--------------------------------------------------------------------------
+  %---------------------------------------------------------------------------
+  % running on the first or the last frame
+  %---------------------------------------------------------------------------
   if ~params.TEST && ((k == 2) || (k == FINISH)) && ~exist('ADD','var');
-    ADD = v2struct(params, objects, object_map, ...
-      seq, flow_path, img_path, flowtype, outpath, files, flow_files, ...
-      edge_model, past, boxes, dx_inds, dy_inds, ...  
-      Dx, Dy, problem, nameStr, object_mean_uvf_map, FINISH, T, FXF);
+    ADD = v2struct(params, objects, object_map, seq, flow_path, img_path, ...
+      flowtype, outpath, files, flow_files, edge_model, past, boxes, ...
+      dx_inds, dy_inds, Dx, Dy, problem, nameStr, object_mean_uvf_map, ...
+      FINISH, T, FXF);
 
     if (k == 2); % first frame
       cvos(params, k-1, ADD);
