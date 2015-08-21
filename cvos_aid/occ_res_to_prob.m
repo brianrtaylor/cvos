@@ -1,10 +1,21 @@
+%-----------------------------------------------------------------------------
+% occ_res_to_prob
+%
 % turns residual into a probability, after some smoothing
+%
+% @return: r2 (MxN): probability of occlusion
+% @param: res (MxN): residual image
+% @param: SMOOTH: whether to smooth the residual with a gaussian filter
+% @param: DILATE: whether to dilate the residual via morphological op
+%-----------------------------------------------------------------------------
 function r2 = occ_res_to_prob(res, SMOOTH, DILATE)
-
-if ~exist('VIS', 'var'); VIS = 100; end;
+% parameters and inputs
+ALPHA = 2;
+BETA = 10;
+PLAY = false;
+VIS = 100;
 if ~exist('SMOOTH', 'var'); SMOOTH = false; end;
 if ~exist('DILATE', 'var'); DILATE = false; end;
-if ~exist('PLAY', 'var'); PLAY = false; end;
 
 res2 = res;
 res2(isnan(res2)) = 0.0;
@@ -18,13 +29,7 @@ if DILATE;
   res2 = imfilter(res2, g);
 end
 
-% parameters
-% % cube
-% ALPHA = 2;
-% BETA = 40;
-% moseg
-ALPHA = 2;
-BETA = 10;
+
 
 % some playing
 if PLAY;
@@ -42,10 +47,8 @@ else
   else
     BETA = max(BETA, mean(res_big(:)));
   end
-  % BETA = min(BETA_maybe, max(1.0, max(res(:))));
 end
 
-% residual (res > 1.0 always surprisingly, even if range(I0) = [0,1] 20140807)
 r2 = 1 - exp(-(abs(res2 ./ BETA) .^ ALPHA) );
 r2(isnan(res)) = 0;
 

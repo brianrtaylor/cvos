@@ -1,5 +1,23 @@
+%-----------------------------------------------------------------------------
+% obtain_bbox_shapes
+%
+% obtain shape model for local shape classifier from segmentation from the 
+% previous frame warped into the current frame
+%
+% @return: shape_{f,g} (MxN): computed shape of foreground/background
+% @return: shape_conf (MxN): confidence in shape at each pixel location
+% @return: sigma: adaptive parameter for computing the shape confidence
+%   (depends on the confidence in the colour model)
+%
+% @param: layers (MxN): layer segmentation from the prior frame
+% @param: boxes: struct array of local shape classifiers
+%-----------------------------------------------------------------------------
 function [shape_fg, shape_bg, shape_conf, sigma] = obtain_bbox_shapes( ...
   layers, boxes)
+% parameters
+CONF_COLOUR_THRESH = 0.85;
+SIGMA_LO = 2.0;
+a_denom = (1 - CONF_COLOUR_THRESH) ^ 2;
 
 n_boxes = size(boxes, 1);
 [rows, cols, ~] = size(layers);
@@ -8,12 +26,6 @@ shape_fg = struct('prob', []);
 shape_bg = struct('prob', []);
 shape_conf = struct('conf', []);
 sigma = nan(n_boxes, 1);
-
-% parameters
-CONF_COLOUR_THRESH = 0.85;
-SIGMA_LO = 2.0;
-
-a_denom = (1 - CONF_COLOUR_THRESH) ^ 2;
 
 for k = 1:n_boxes;
   bb = boxes(k);
@@ -58,13 +70,13 @@ for k = 1:n_boxes;
     sigma(k) = SIGMA_LO;
   else
     a = (diam - SIGMA_LO) / a_denom;
-    sigma(k) = SIGMA_LO + a * (bb.conf_colour - CONF_COLOUR_THRESH)^2;
+    sigma(k) = SIGMA_LO + a * (bb.conf_colour - CONF_COLOUR_THRESH) ^ 2;
   end
   
   % 2. compute shape conf
   fg_edge = double(edge(shape_fg(k).prob));
   [ii, jj] = find(fg_edge);
   a = msfm(1.0 - fg_edge, [ii, jj]', true, true);
-  shape_conf(k).conf = 1.0 - exp(- (a.*a) ./ (sigma(k) * sigma(k)));
+  shape_conf(k).conf = 1.0 - exp(-(a .* a) ./ (sigma(k) * sigma(k)));
 end
 end

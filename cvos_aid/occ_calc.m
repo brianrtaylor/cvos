@@ -3,9 +3,10 @@
 %
 % detect occlusions for a single frame
 %
-% @param: I0: first image (warp to)
-% @param: I1: second image (warp this image back to I0 ref frame) using uvf
-% @param: uvf: forward optical flow from I0 to I1
+% @return: occ (MxN): occlusion image
+% @param: I0 (MxNx3): first image (warp to)
+% @param: I1 (MxNx3): second image (warped back to I0 ref frame) using uvf
+% @param: uvf (MxNx2): forward optical flow from I0 to I1
 % @param: DETECT_OCC_METHOD: method for occlusion detection
 % * LAB_RES: residual in lab colorspace
 % * RGB_RES: residual in standard rgb colorspace
