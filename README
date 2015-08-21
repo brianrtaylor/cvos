@@ -30,7 +30,7 @@ Dependencies:
 You must run "mex_setup.m" in prior to anything
 
 ===========================================================================
-3. FINAL WORDS
+2. FINAL WORDS
 ===========================================================================
 
 This code was tested on Ubuntu.
@@ -39,6 +39,7 @@ If you use this work in your research, we ask that you cite the following:
 Causal Video Object Segmentation from Persistence of Occlusions
 B. Taylor, V. Karasev, and S. Soatto. In CVPR, 2015.
 
+Website available at: http://vision.ucla.edu/cvos/
 Additionally, if you have any comments about this work, please do not hesitate to contact us.
 
 btay@cs.ucla.edu, karasev00@gmail.com
