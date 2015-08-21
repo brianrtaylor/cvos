@@ -19,16 +19,6 @@
 % @param: boxes_per_pixel_limit: max number of boxes covering each pixel
 %   (if too many cover a pixel, the lowest model confidence are dropped first)
 %   (default: 3)
-%
-% @note: box structure description
-% * center (y,x)
-% * radii - or size of some sort
-% * layer_occd
-% * layer_occr
-% * mask (perhaps)
-% * colour model (box_gmm_bg, box_gmm_fg)
-% * colour confidence
-% * shape model
 %-----------------------------------------------------------------------------
 function [new_boxes, boxes, valid_boxes] = bboxes_for_mask_update( ...
   mask_in, Dx, Dy, r, boxes, box_limit, boxes_per_pixel_limit)
@@ -222,47 +212,11 @@ end
 %-----------------------------------------------------------------------------
 % add new boxes
 %-----------------------------------------------------------------------------
-p_all = find(look > 0);
-
+p_all       = find(look > 0);
 p_out       = zeros(1, 0);
 pts_to_add  = zeros(1, 0);
 check_p     = look(p_all);
-
-new_boxes = struct;
-new_boxes.y = [];
-new_boxes.x = [];
-new_boxes.r = [];
-new_boxes.d = [];
-new_boxes.invd = [];
-new_boxes.lay_occd = [];
-new_boxes.lay_occr = [];
-new_boxes.lay_occd_conf = [];
-new_boxes.lay_occr_conf = [];
-new_boxes.fg_mask = []; % from layers (might be old)
-new_boxes.bg_mask = [];
-new_boxes.fg_prob = []; % from colour + shape classification
-new_boxes.bg_prob = [];
-new_boxes.fg_prob_colour = [];
-new_boxes.bg_prob_colour = [];
-new_boxes.fg_prob_shape = [];
-new_boxes.bg_prob_shape = [];
-new_boxes.gmm_change = [];
-new_boxes.gmm_learn_colour_mask = [];
-new_boxes.fg_gmm_mu = [];
-new_boxes.fg_gmm_cov = [];
-new_boxes.fg_gmm_pi = [];
-new_boxes.bg_gmm_mu = [];
-new_boxes.bg_gmm_cov = [];
-new_boxes.bg_gmm_pi = [];
-new_boxes.conf = [];
-new_boxes.conf_colour = [];
-new_boxes.conf_colour_denom = [];
-new_boxes.conf_colour_h = [];
-new_boxes.conf_colour_denom_h = [];
-new_boxes.conf_mask = [];
-new_boxes.conf_shape = [];
-new_boxes.sigma_shape = [];
-new_boxes.age = [];
+new_boxes   = struct_box;
 
 k = 0;
 nboxes = 0;
@@ -312,9 +266,9 @@ while sum(check_p) > MAX_PIXELS_TO_IGNORE;
     % make box and add it
     %-------------------------------------------------------------------------
     p_out = [p_out; p];
-   
     nboxes = nboxes + 1;
-    bb_new = struct;
+
+    bb_new = struct_box;
     bb_new.y = double(py);
     bb_new.x = double(px);
     bb_new.r = double(r);
@@ -328,31 +282,12 @@ while sum(check_p) > MAX_PIXELS_TO_IGNORE;
     bb_new.bg_mask = double(abs(mask_in(ys,xs) - occluded) < 0.5); 
     bb_new.fg_prob = bb_new.fg_mask;
     bb_new.bg_prob = bb_new.bg_mask;
-    bb_new.fg_prob_colour = double([]);
-    bb_new.bg_prob_colour = double([]);
-    bb_new.fg_prob_shape = double([]);
-    bb_new.bg_prob_shape = double([]);
-    
-    bb_new.gmm_change = double([]);
     bb_new.gmm_learn_colour_mask = double(1 ...
       - imdilate(edge(bb_new.fg_mask), dsk));
-    bb_new.fg_gmm_mu = double([]);
-    bb_new.fg_gmm_cov = double([]);
-    bb_new.fg_gmm_pi = double([]);
-    bb_new.bg_gmm_mu = double([]);
-    bb_new.bg_gmm_cov = double([]);
-    bb_new.bg_gmm_pi = double([]);
-    
-    bb_new.conf = double(1.0);
-    bb_new.conf_colour = double([]);
-    bb_new.conf_colour_denom = double([]);
-    bb_new.conf_colour_h = double([]);
-    bb_new.conf_colour_denom_h = double([]);
-    bb_new.conf_mask = double([]);
-    bb_new.conf_shape = double([]);
-    bb_new.sigma_shape = double([]);
-    bb_new.age = double(0);
-    
+    bb_new.conf = 1.0;
+    bb_new.age = 0;
+   
+    % add box
     new_boxes(nboxes, 1) = bb_new;
     
     % find new points to make boxes for
@@ -392,11 +327,11 @@ ys = ((y - sz):(y + sz))';
 xs = ((x - sz):(x + sz))';
 
 n = 2 * sz + 1;
-s = ones(n-1, 1);
-top   = [ys(1) * s, xs(2:end)  ];
-bot   = [ys(n) * s, xs(1:end-1)];
-left  = [ys(1:end-1), xs(1) * s];
-right = [ys(2:end)  , xs(n) * s];
+s = ones(n - 1, 1);
+top   = [ys(1) * s    , xs(2:end)    ];
+bot   = [ys(n) * s    , xs(1:end - 1)];
+left  = [ys(1:end - 1), xs(1) * s    ];
+right = [ys(2:end)    , xs(n) * s    ];
 
 draw_box_yx = cat(1, top, right, bot, left);
 edge_inds = sub2ind(imsize, draw_box_yx(:, 1), draw_box_yx(:, 2));

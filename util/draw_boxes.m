@@ -57,7 +57,7 @@ end
 % returns the image indices of the pixels to be drawn on
 %-----------------------------------------------------------------------------
 function draw_box_inds = put_box(imsize, box, sz)
-[rows, cols] = deal(imsize(1), cols = imsize(2));
+[rows, cols] = deal(imsize(1), imsize(2));
 [y, x] = deal(box(1), box(2));
 
 ymin = max(1,    y - sz);
