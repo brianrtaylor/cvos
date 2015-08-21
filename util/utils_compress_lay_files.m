@@ -1,6 +1,20 @@
-% load all files corresponding to this sequence
-function lay = utils_compress_lay_files(p, seq, flag, rev_flag, index)
-str_search = fullfile(p, sprintf('%s_*_lay_cvos_%s.mat', seq, flag));
+%-----------------------------------------------------------------------------
+% utils_compress_lay_files
+%
+% aggregates layer and object segmentation results in individual .mat files 
+% into a single file for evaluation 
+%
+% @return: lay (MxNxZ): stack of layer segmentations for Z sequence images
+% @return: obj (MxNxZ): stack of object segmentations for Z sequence images
+%
+% @param: p: path to output files
+% @param: seq: sequence name or prefix to output files
+% @param: post: what string to append to the video name
+% @param: rev_flag: whether or not to make a forward-backward noncausal video
+% @param: index: which images to load (defaults: whole sequence)
+%-----------------------------------------------------------------------------
+function [lay, obj] = utils_compress_lay_files(p, seq, post, rev_flag, index)
+str_search = fullfile(p, sprintf('%s_*_lay_cvos_%s.mat', seq, post));
 files = dir(str_search);
 lay = [];
 T = length(files);
@@ -41,7 +55,7 @@ else
     fprintf('%s\n', files( index(ii) ).name);
     env = load(fullfile(p, files( index(ii) ).name), 'lay', 'object_map');
     if ii==1;
-      lay = zeros(size(env.lay,1), size(env.lay,2), length(index) ,'uint8'); 
+      lay = zeros(size(env.lay,1), size(env.lay,2), length(index) ,'uint8');
       obj = zeros(size(env.object_map,1), size(env.object_map,2), ...
         length(index) ,'uint16');
     end

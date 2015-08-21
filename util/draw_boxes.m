@@ -1,22 +1,33 @@
+%-----------------------------------------------------------------------------
+% drawBoxes
+%
+% visualizes the local shape classifier windows on the input image for easier
+% viewing and debugging
+%
+% @return: out_img (MxNx3): classifier windows drawn on the input img
+% @return: box_img (MxNx3): classifier windows drawn on a black background
+%   (here, color indicates the index of the box (blue-1st, red-last)
+%
+% @param: img: input image to draw classifier windows on
+% @param: boxes (Nx2): list of classifier window centers (y,x)
+% @param: sizes: radii of the classifier windows (defaults to 5)
+% @param: conf: confidence of each classifier (defaults to 1)
+%-----------------------------------------------------------------------------
 function [out_img, box_img] = draw_boxes(img, boxes, sizes, conf)
+[rows, cols, chan] = size(img); imsize = [rows, cols];
+box_img = zeros(rows, cols, chan);
 out_img = img;
-box_img = zeros(size(img));
 
-if isempty(boxes);
-  return;
-end
+if isempty(boxes); return; end; % nothing to draw
 
-[rows, cols, chan] = size(img);
-imsize = [rows, cols];
 [N, ~] = size(boxes);
-
 if ~exist('sizes', 'var'); sizes = 5; end;
 if length(sizes) == 1; sizes = sizes * ones(N, 1); end
+if ~exist('conf', 'var'); conf = ones(N, 1); end;
 
 box_img = zeros(imsize);
 box_draw_img = zeros(imsize);
 boxes = round(boxes);
-if ~exist('conf', 'var'); conf = ones(N, 1); end;
 for k = 1:N;
   binds = put_box(imsize, boxes(k, :), sizes(k));
 
@@ -42,22 +53,19 @@ else
 end
 end
 
+%-----------------------------------------------------------------------------
 % returns the image indices of the pixels to be drawn on
+%-----------------------------------------------------------------------------
 function draw_box_inds = put_box(imsize, box, sz)
-rows = imsize(1);
-cols = imsize(2);
-
-y = box(1);
-x = box(2);
+[rows, cols] = deal(imsize(1), cols = imsize(2));
+[y, x] = deal(box(1), box(2));
 
 ymin = max(1,    y - sz);
 ymax = min(rows, y + sz);
 xmin = max(1,    x - sz);
 xmax = min(cols, x + sz);
-
 ys = (ymin:ymax)';
 xs = (xmin:xmax)';
-
 nys = length(ys);
 nxs = length(xs);
 

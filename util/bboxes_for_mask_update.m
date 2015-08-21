@@ -1,13 +1,26 @@
-%--------------------------------------------------------------------
-% @return: boxes: boxes are defined by a N x 3 array of centers (y,x), and
-% a radius
+%-----------------------------------------------------------------------------
+% bboxes_for_mask_update
 %
-% @note: how to treat boxes
-% * decay over time, 0.2 or something?
-% * remove if only 5% fg or only 5% bg
-% * remove if the box shrinks (below an X%?)
+% updates the set of local shape classifiers by removing those that poorly 
+% approximate the object boundary and adding new ones where the boundary is
+% not yet covered by any. A box represents a local shape classifier
+% 
+% @return: new_boxes: struct array of the boxes created 
+% @return: boxes: struct array of the updated set of boxes
+% @return: valid_boxes: indicates which boxes are still good and which should
+%   be dropped (based on criteria including how much foreground is in the 
+%   classifier window. Search "keep or toss box criteria" in this file
 %
-% @note: things boxes need
+% @param: mask_in (MxN): input object mask
+% @param: Dx, Dy: difference operators in x, y directions
+% @param: r: radius for new boxes
+% @param: boxes: struct array of current boxes
+% @param: box_limit: limit on total number of boxes (default: infinite)
+% @param: boxes_per_pixel_limit: max number of boxes covering each pixel
+%   (if too many cover a pixel, the lowest model confidence are dropped first)
+%   (default: 3)
+%
+% @note: box structure description
 % * center (y,x)
 % * radii - or size of some sort
 % * layer_occd
@@ -16,18 +29,18 @@
 % * colour model (box_gmm_bg, box_gmm_fg)
 % * colour confidence
 % * shape model
-%--------------------------------------------------------------------
+%-----------------------------------------------------------------------------
 function [new_boxes, boxes, valid_boxes] = bboxes_for_mask_update( ...
   mask_in, Dx, Dy, r, boxes, box_limit, boxes_per_pixel_limit)
 
+MAX_PIXELS_TO_IGNORE = 2;
 BOX_MEMORY_FACTOR = 0.2;
-BOXJITTER = true;
+BOXJITTER = true; % jitters box's center to lie closer to the object boundary
 VIS = 999;
 
 if ~exist('box_limit', 'var') || (box_limit < 0); box_limit = inf; end;
 if ~exist('boxes_per_pixel_limit', 'var'); boxes_per_pixel_limit = 3; end;
-[rows, cols, ~] = size(mask_in);
-imsize = [rows, cols];
+[rows, cols, ~] = size(mask_in); imsize = [rows, cols];
 dsk = strel('disk', 5);
 
 mask = round(mask_in);
@@ -42,10 +55,7 @@ xx = repmat((-r:r) , diam, 1);
 box_dist = sqrt(yy .* yy + xx .* xx);
 inv_box_dist = 1./ max(1.0, box_dist);
 
-%--------------------------------------------------------------------
 % build edge image to cover
-%--------------------------------------------------------------------
-% weights edge weight
 dx_l = Dx * mask(:);
 dy_l = Dy * mask(:);
 dx_l = reshape(dx_l, imsize);
@@ -56,21 +66,10 @@ ad_l = abs(d_l);
 look_img = abs(d_l) > 0;
 look = look_img;
 
-%--------------------------------------------------------------------
-% go through existing boxes and choose to keep / toss
-%--------------------------------------------------------------------
+%-----------------------------------------------------------------------------
+% go through existing boxes and choose to keep or toss
+%-----------------------------------------------------------------------------
 counts = zeros(imsize);
-
-% methods to balance boxes:
-% 1. have a list per pixel. when we count too much, remove 1 from the pixels
-%    and also remove the that box from the list of blocks per pixel (way slow)
-%    stop when no pixel has more than 5 or so on it
-%
-% 2. sort the boxes in advance by their confidence. once certain pixels hit 
-%    5 or so on it, don't add any more boxes that might touch this pixel. 
-%    Just ignore them and drop from the box set. This is probably the best
-%    option since it's of reasonable speed. now try implementing it
-%    tomorrow. a. do that sorting by confidence and b. go
 
 % sortboxes on confidence
 if ~isempty(boxes);
@@ -88,8 +87,8 @@ for k = 1:n_boxes;
   diam = 2 * r + 1;
   z = zeros(diam, diam);
   
+  % modifies box's location based on the edge image
   if BOXJITTER;
-    % modify y,x based on the edge image
     ymin = max(1,    y - r);
     ymax = min(rows, y + r);
     xmin = max(1,    x - r);
@@ -130,9 +129,9 @@ for k = 1:n_boxes;
   bys = bymin:bymax;
   bxs = bxmin:bxmax;
   
-  %------------------------------------------------------------------
+  %---------------------------------------------------------------------------
   % changes to the box
-  %------------------------------------------------------------------
+  %---------------------------------------------------------------------------
   % udpate age
   boxes(k).age = boxes(k).age + 1;
   
@@ -166,16 +165,16 @@ for k = 1:n_boxes;
     boxes(k).conf = boxes(k).conf - BOX_MEMORY_FACTOR;
   end
 
-  %------------------------------------------------------------------
+  %---------------------------------------------------------------------------
   % keep or toss box criteria
-  %------------------------------------------------------------------  
-  % box outside of image limits
+  %---------------------------------------------------------------------------
+  % if box outside of image limits, drop
   if (y < 1) || (y > rows) || (x < 1) || (x > cols);
     valid_boxes(k) = false; continue;
   end
 
-  % if fg or bg < %10 of the box, lower confidence
-  % or if the mask to learn gmm from / do movement is too small
+  % if fg or bg < %10 of the box area or if the learning mask is too small, 
+  % then lower confidence
   msk = boxes(k).fg_mask > 0.5;
   msk_learn = msk .* boxes(k).fg_prob .* boxes(k).gmm_learn_colour_mask;
   nmsk = sum(msk(:));
@@ -187,33 +186,31 @@ for k = 1:n_boxes;
     boxes(k).conf = boxes(k).conf - BOX_MEMORY_FACTOR;
   end
   
-  % if new lay_occr is background layer, or occlusion constraint isn't
-  % maintained, then toss
+  % if lay_occr is in the background layer (i.e. occlusion constraint isn't
+  % maintained), then drop
   if (boxes(k).lay_occr == 0) || (boxes(k).lay_occr <= boxes(k).lay_occd);
     valid_boxes(k) = false; continue;
   end
   
-  % if confidences in colour and shape fall too low
+  % if confidence in colour model fall too low, drop
   if boxes(k).conf_colour < 0.25;
     valid_boxes(k) = false; continue;
   end
  
-  % general confidence too low
+  % if general local classifier window confidence too low, drop
   if boxes(k).conf < 0.10;
     valid_boxes(k) = false; continue;
   end
 
-  % too many boxes in one spot
+  % if too many boxes in one spot, drop
   if any(vec(counts(ys, xs))) >= boxes_per_pixel_limit;
     valid_boxes(k) = false; continue;
   end
 
-  %------------------------------------------------------------------
-  % if kept, edit the look image for box addition step
-  %------------------------------------------------------------------
+  %---------------------------------------------------------------------------
+  % if kept, edit the look image and counts
+  %---------------------------------------------------------------------------
   look(ys, xs) = 0;
-
-  % for seeing if too many boxes
   counts(ys, xs) = counts(ys, xs) + 1;
 end
 
@@ -222,9 +219,9 @@ if ~isempty(valid_boxes);
   n_boxes = sum(valid_boxes);
 end
 
-%--------------------------------------------------------------------
+%-----------------------------------------------------------------------------
 % add new boxes
-%--------------------------------------------------------------------
+%-----------------------------------------------------------------------------
 p_all = find(look > 0);
 
 p_out       = zeros(1, 0);
@@ -269,11 +266,8 @@ new_boxes.age = [];
 
 k = 0;
 nboxes = 0;
-MAX_PIXELS_TO_IGNORE = 2;
 while sum(check_p) > MAX_PIXELS_TO_IGNORE;
-  if size(p_out, 1) >= (box_limit - n_boxes);
-    break;
-  end
+  if size(p_out, 1) >= (box_limit - n_boxes); break; end
 
   if ~isempty(pts_to_add);
     % extract a point and add to output list
@@ -292,9 +286,9 @@ while sum(check_p) > MAX_PIXELS_TO_IGNORE;
       continue;
     end
 
-    %-------------------------------------------------
+    %-------------------------------------------------------------------------
     % get more box info
-    %-------------------------------------------------
+    %-------------------------------------------------------------------------
     edge_inds = put_box(imsize, [py, px], r);
     
     % get layer values for occluder, occluded
@@ -314,9 +308,9 @@ while sum(check_p) > MAX_PIXELS_TO_IGNORE;
     
     assert(occluder > occluded, sprintf('%s: occluder/occluded', mfilename));
     
-    %-------------------------------------------------
+    %-------------------------------------------------------------------------
     % make box and add it
-    %-------------------------------------------------   
+    %-------------------------------------------------------------------------
     p_out = [p_out; p];
    
     nboxes = nboxes + 1;
@@ -388,13 +382,11 @@ end
 if nboxes == 0; new_boxes = []; end
 end
 
-%--------------------------------------------------------------------
+%-----------------------------------------------------------------------------
 % helper functions
-%--------------------------------------------------------------------
+%-----------------------------------------------------------------------------
 function edge_inds = put_box(imsize, box, sz)
-
-y = box(1);
-x = box(2);
+[y, x] = deal(box(1), box(2));
 
 ys = ((y - sz):(y + sz))';
 xs = ((x - sz):(x + sz))';
