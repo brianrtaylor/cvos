@@ -5,11 +5,10 @@
 % models listed below include the experiments shown in the paper
 %
 % @param: model: appropriate model choices follow
-% * fxf         : frame by frame or basic (same as ayvaci)
-% * fxfperturb  : frame by frame or basic + perturbation
-% * ayv         : ayvaci's PAMI12 method to temporally integrate cues
-% * full        : our full system 
-% * fullnopcbf  : full system but no flow extrapolation
+% * fxfperturb: frame by frame or basic + perturbation
+% * ayv: method from Ayvaci et al. PAMI12 to temporally integrate cues
+% * full: our full system 
+% * fullnopcbf: full system but no flow extrapolation
 %-----------------------------------------------------------------------------
 function cvos_run(seqs, model, dataset)
 setup;
@@ -68,16 +67,6 @@ elseif strcmp(model, 'fullnopcbf'); % full model but no flow extrapolation
   PKG.DO_CONS_PERTURB = false;
   PKG.DO_CONS_NOW_PERTURB = false;
   outpath = fullfile(plotbase, 'wcr-cvos-r1.0-fullnopcbf');
-elseif strcmp(model, 'fxf');
-  PKG.CAUSAL = false;
-  PKG.WEIGHTSHELP = false;
-  PKG.UNITYHELP = false;
-  PKG.BOXHELP = false;
-  PKG.PROB_FG = 0;
-  PKG.DO_CONS_PERTURB = false;
-  PKG.DO_CONS_NOW_PERTURB = false;
-  PKG.DO_FORBACKCAUSAL = false;
-  outpath = fullfile(plotbase, 'wcr-cvos-r1.0-fxf');
 elseif strcmp(model, 'ayv');
   PKG.CAUSAL = true;
   PKG.WEIGHTSHELP = true;
