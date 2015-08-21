@@ -1,3 +1,14 @@
+%-----------------------------------------------------------------------------
+% vis_cues
+%
+% visualizes the constraints on top of the input image
+%
+% @return: W: output image with cues 
+% @param: img (MxNx3): image to draw things on top of
+% @param: constraints: occluder/occluded pairs to draw on image
+% @param: constraint_weights: associated weights for each of the constraints
+% @param: thresh: threshold to draw the constraints or not
+%-----------------------------------------------------------------------------
 function W = vis_cues(img, constraints, constraint_weights, thresh)
 imsize = [size(img, 1), size(img, 2)];
 
@@ -22,11 +33,6 @@ if ~exist('constraint_weights', 'var');
   constraint_weights = ones(nconstraints, 1);
 end
 
-% nnodes = numel(weights)/2;
-% W = reshape(weights(1:nnodes) + weights(nnodes+1:end), imsize);
-% W = repmat(W,[1 1 3])/2;
-% W = max(min(W,1),0);
-
 if ~isempty(constraints);
   occd = zeros(imsize);
   occd(constraints(:,2))=constraint_weights;
@@ -38,9 +44,5 @@ if ~isempty(constraints);
 
   W = 0.1*W + 0.9*(W.*repmat(occd(:,:,1)==0,[1 1 3]) + occd);
   W = 0.1*W + 0.9*(W.*repmat(occr(:,:,1)==0,[1 1 3]) + occr);
-  % W = 0.1*W + 0.9*(W.*(1 - occd) + occd); % don't work
-  % W = 0.1*W + 0.9*(W.*(1 - occr) + occr); % don't work
-  % W = W.*(1.0 - occd) + occd; % don't work
-  % W = W.*(1.0 - occr) + occr; % don't work
 end
 end
