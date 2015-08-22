@@ -1,8 +1,23 @@
-function w = make_pixelwise_weights( idx, I, uvb_, uvf_, gpb, weights, opts)
+%-----------------------------------------------------------------------------
+% make_pixelwise_weights
+%
+% @return: constraints_: constraints post warping forward in time
+% @return: w_uv: associated weights post warping (larger warp -> larger decay)
+% @return: valid: which boxes are valid and which are not
+% @param: constraints: constraints in prior frame to warp forward
+% @param: uvb_rev (MxNx2): warping to use to propagate constraints from prior 
+%   frame to current one
+% @param: SAFESPEEDSQUARED: parameter that affects weight decay w.r.t. warp
+%-----------------------------------------------------------------------------
 
-%--------------------------------------------------------------------
+
+
+
+function w = make_pixelwise_weights(idx, I, uvb_, uvf_, gpb, weights, opts)
+
+%-----------------------------------------------------------------------------
 % settings 
-%--------------------------------------------------------------------
+%-----------------------------------------------------------------------------
 WEIGHT_MAG_THRESHOLD = 0.65;
 THETA = 0.2;
 MINWUV = 5e-3;
