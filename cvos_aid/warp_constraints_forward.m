@@ -1,17 +1,26 @@
-% constraints_ = propagate_occlusion_pairs_forward(prev_constraints, uvb_rev);
-%   where:
-%       prev_constraints -- defined on the domain of I(t-1)
-%       uvb_rev -- FLOW( I(t-1), I(t) )
-%       constraints -- will be defined in I(t)
-% the warping is done by the motion of occluder only, and the occluded point's   
+%-----------------------------------------------------------------------------
+% warp_constraints_forward
+%
+% warps constraintsfrom the prior frame to the current frame.
+% the warping is done by the motion of occluder only, and the occluded point's
 % location is determined by keeping it the same distance (and orientation)
 % away from occluder, as in the previous frame.
 %
-function [constraints_, w_uv, valid] = warp_constraints_forward(constraints, uvb_rev, SAFESPEEDSQUARED)
+% @return: constraints_: constraints post warping forward in time
+% @return: w_uv: associated weights post warping (larger warp -> larger decay)
+% @return: valid: which boxes are valid and which are not
+% @param: constraints: constraints in prior frame to warp forward
+% @param: uvb_rev (MxNx2): warping to use to propagate constraints from prior 
+%   frame to current one
+% @param: SAFESPEEDSQUARED: parameter that affects weight decay w.r.t. warp
+%-----------------------------------------------------------------------------
+function [constraints_, w_uv, valid] = warp_constraints_forward( ...
+  constraints, uvb_rev, SAFESPEEDSQUARED)
 if ~exist('SAFESPEEDSQUARED', 'var'); SAFESPEEDSQUARED = 10.0; end;
 imsize = [size(uvb_rev,1), size(uvb_rev,2)];
 ux = uvb_rev(:,:,1);
 uy = uvb_rev(:,:,2);
+
 % consider only the motion of the occluder:
 [X, Y] = meshgrid(1:imsize(2), 1:imsize(1));
 xy_occd = [X(constraints(:,2)), Y(constraints(:,2))];
@@ -24,7 +33,7 @@ v = xy_occr - xy_occd;
 uv_mag_occr_squared = ux(constraints(:,1)).^2 + uy(constraints(:,1)).^2;
 uv_mag_occr = sqrt(uv_mag_occr_squared);
 uv_mag_occr_avg = mean(uv_mag_occr(:));
-w_uv = exp( -uv_mag_occr / max(sqrt(SAFESPEEDSQUARED), (uv_mag_occr_avg / 2.0)) );
+w_uv = exp(-uv_mag_occr / max(sqrt(SAFESPEEDSQUARED), uv_mag_occr_avg / 2.0));
 
 % warp occluder
 x1_ = X(constraints(:,1)) + ux(constraints(:,1));

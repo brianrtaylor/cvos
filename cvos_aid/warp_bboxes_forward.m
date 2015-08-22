@@ -1,19 +1,21 @@
-
-% @param: boxes: struct with following fields
-%   * y, x : location of center in image
-%   * r : determines box size
+%-----------------------------------------------------------------------------
+% warp_bboxes_forward
 %
-% @note: b.fg_prob{,_colour,_shape} all in frame t-1
+% warps local shape classifiers from the prior frame to the current frame
+%
+% @return: boxes_out: struct array of boxes post forward propagation via uvf
+% @return: valid: which boxes are valid and which are not
+% @param: boxes: struct array of boxes before propagation
+%   * y, x: location of center in image
+%   * r: determines box size
+% @param: uvf (MxNx2): forward optical flow from I0 to I1
+% @param: WARPSAFESPEED: the parameter
+%-----------------------------------------------------------------------------
 function [boxes_out, valid] = warp_bboxes_forward(boxes, uvf, WARPSAFESPEED)
-
 if ~exist('WARPSAFESPEED'); WARPSAFESPEED = 20; end;
-
 boxes_out = boxes;
 valid = [];
-
-if isempty(boxes);
-  return;
-end
+if isempty(boxes); return; end
 
 [rows, cols, ~] = size(uvf);
 uvf(isnan(uvf) | isinf(uvf)) = 0.0;
