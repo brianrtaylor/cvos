@@ -1,8 +1,13 @@
-% function to draw avrious diagnostics of the boxes to see what's
-% going on inside of them
+%-----------------------------------------------------------------------------
+% diagboxes
 %
-% @note: assumes all box insides are the same size for now: 
-%   prob, mask, etc.
+% draws simple diagnostics of the boxes for debugging
+%
+% @note: assumes all box insides are the same size for now: prob, mask, etc.
+%
+% @return: o: image includes mask, colour prob, shape prob, and combined prob
+% @param: boxes
+%-----------------------------------------------------------------------------
 function o = diagboxes(boxes)
 
 % parse input
@@ -59,10 +64,5 @@ oprob = [fg_prob, vbar, bg_prob];
 oprob_colour = [fg_prob_colour, vbar, bg_prob_colour];
 oprob_shape = [fg_prob_shape, vbar, bg_prob_shape];
 
-% old mask
-% prob
-% prob_colour
-% prob_shape
-% o = [omask; hbar; oprob_colour; hbar; oprob_uv; hbar; oprob_shape; hbar; oprob];
 o = [omask; hbar; oprob_colour; hbar; oprob_shape; hbar; oprob];
 end

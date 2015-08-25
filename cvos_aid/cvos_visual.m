@@ -1,54 +1,55 @@
-%------------------------------------------------------------------------
+%-----------------------------------------------------------------------------
 % cvos_visual
 %
-% provides all visualizations for our code and stores results
-%------------------------------------------------------------------------
+% provides visualizations for our framework and writes result images for 
+% debugging and visually evaluating our results
+% 
+% @params: <just about everything one could visualize>
+%-----------------------------------------------------------------------------
 function cvos_visual(layers, ...
   constraints_causal_b, constraints_causal_f, constraint_weights_old_b, ...
   constraint_weights_old_f, constraints_now_b, constraints_now_f, ...
   constraint_weights_now_nodiv_b, constraint_weights_now_nodiv_f, ...
   constraint_weights_now_b, constraint_weights_now_f, constraints, ...
   constraint_weights, occb_cbf, occf_cbf, occb_cbf_prob, occf_cbf_prob, ...
-  weights_now, weights, wx_vis, imsize, uvb_cbf, uvf_cbf, ...
-  prob_fg, i1, i1_bflt, I1, outpath, nameStr, versiontype, seq, k, ...
-  past, problem, boxes, BOX_RAD, BOXHELP, VIS, params, ...
-  object_map, kappa_fg, kappa_box)
+  weights_now, weights, wx_vis, imsize, uvb_cbf, uvf_cbf, prob_fg, ...
+  i1, i1_bflt, I1, outpath, nameStr, versiontype, seq, k, past, problem, ...
+  boxes, BOX_RAD, BOXHELP, VIS, params, object_map, kappa_fg, kappa_box)
 
-rows = imsize(1);
-cols = imsize(2);
+[rows, cols] = deal(imsize(1), imsize(2));
 n = rows * cols;
-
+z0 = zeros(imsize);
 SAVEFIGBOX = true;
 
-%------------------------------------------------------------------------
-% visualization 
-%------------------------------------------------------------------------
+%-----------------------------------------------------------------------------
+% visualization aids
+%-----------------------------------------------------------------------------
 % draws the layer legend
 lay = reshape(layers, imsize);
 layermap = lay;
-layermap(1,1,:)=0;
-layermap(1,2,:)=3;
-layermap(1:10,1:10)=0;
-layermap(1:10,11:20)=1;
-layermap(1:10,21:30)=2;
-layermap(1:10,31:40)=3;
+layermap(1, 1, :) = 0;
+layermap(1, 2, :) = 3;
+layermap(1:10, 1:10) = 0;
+layermap(1:10, 11:20) = 1;
+layermap(1:10, 21:30) = 2;
+layermap(1:10, 31:40) = 3;
 layermap = min(3, layermap); % cuts off anything higher
 
 layerimg = 0.4 * sc(i1, 'gray') + 0.6 * sc(layermap, 'jet');
 % most frames have 6 or less objects of interest
-objectimg = 0.4 * sc(i1, 'gray') + 0.6 * sc(object_map, 'jet', [0,4]);
+objectimg = 0.4 * sc(i1, 'gray') + 0.6 * sc(object_map, 'jet', [0, 4]);
 
-%------------------------------------------------------------------
+%-----------------------------------------------------------------------------
 % prob_fg
-%------------------------------------------------------------------
+%-----------------------------------------------------------------------------
 prob_fg_visual = prob_fg;
 prob_fg_visual_max = max(vec(prob_fg_visual));
 prev_layer_img = 0.4 * sc(i1, 'gray') + 0.6 * ...
   sc(prob_fg_visual, 'jet', [0.0, 5.0]);
 
-%------------------------------------------------------------------
+%-----------------------------------------------------------------------------
 % visualization and output
-%------------------------------------------------------------------
+%-----------------------------------------------------------------------------
 % aggregating constraints
 [constraints_causal, constraint_weights_causal] = aggregate_pairs_fast( ...
   double([constraints_causal_b; constraints_causal_f]), ...
@@ -78,24 +79,26 @@ uvb_cbf_img = im2double(flowToColor(uvb_cbf));
 uvf_cbf_img = im2double(flowToColor(uvf_cbf));
 
 kappa = problem.kappa;
-if isempty(kappa); kappa = zeros(imsize); end;  
-kappa_img = sc(reshape(clip(kappa, 0, 1), imsize), 'jet', [0, params.PROB_FG]);
-kappa_img = 0.6 * kappa_img + 0.4 * repmat(i1, [1,1,3]);
+if isempty(kappa); kappa = z0; end;  
+tmp = sc(reshape(clip(kappa, 0, 1), imsize), 'jet', [0, params.PROB_FG]);
+kappa_img = 0.6 * tmp + 0.4 * repmat(i1, [1,1,3]);
 
-if (isempty(kappa_box) || (numel(kappa_box) < n)); kappa_box = zeros(imsize); end;
-kappa_box_img = sc(reshape(clip(kappa_box, 0, 1), imsize), 'jet', [0, params.PROB_FG]);
-kappa_box_img = 0.6 * kappa_box_img + 0.4 * repmat(i1, [1,1,3]);
+if (isempty(kappa_box) || (numel(kappa_box) < n)); kappa_box = z0; end;
+tmp = sc(reshape(clip(kappa_box, 0, 1), imsize), 'jet', [0, params.PROB_FG]);
+kappa_box_img = 0.6 * tmp + 0.4 * repmat(i1, [1,1,3]);
 
-if isempty(kappa_fg); kappa_fg = zeros(imsize); end;  
-kappa_fg_img = sc(reshape(clip(kappa_fg, 0, 1), imsize), 'jet', [0, params.PROB_FG]);
-kappa_fg_img = 0.6 * kappa_fg_img + 0.4 * repmat(i1, [1,1,3]);
+if isempty(kappa_fg); kappa_fg = z0; end;  
+tmp = sc(reshape(clip(kappa_fg, 0, 1), imsize), 'jet', [0, params.PROB_FG]);
+kappa_fg_img = 0.6 * tmp + 0.4 * repmat(i1, [1,1,3]);
 
+%-----------------------------------------------------------------------------
 % drawing the images
+%-----------------------------------------------------------------------------
 if VIS < 500;
   fig(150); clf;
-  %------------------------------------------------------------------
+  %---------------------------------------------------------------------------
   % TOP ROW
-  %------------------------------------------------------------------
+  %---------------------------------------------------------------------------
   vl_tightsubplot(3,4,1);
   imagesc(vis_weights_old); axt; notick;
   th = text(cols/2 - cols/3,rows/10,sprintf('constraints: casual: %0.2f', ...
@@ -120,9 +123,9 @@ if VIS < 500;
     max(problem.Wx(:))));
   set(th, 'Color', 'white');
 
-  %------------------------------------------------------------------
+  %---------------------------------------------------------------------------
   % MID ROW
-  %------------------------------------------------------------------
+  %---------------------------------------------------------------------------
   vl_tightsubplot(3,4,5);
   imagesc(i1_bflt); axt; notick; title(k);
   
@@ -143,9 +146,9 @@ if VIS < 500;
     prob_fg_visual_max));
   set(th, 'Color', 'white');
 
-  %------------------------------------------------------------------
+  %---------------------------------------------------------------------------
   % BOT ROW
-  %------------------------------------------------------------------
+  %---------------------------------------------------------------------------
   vl_tightsubplot(3,4,9);
   imagesc(layerimg); axt; notick; % output layers
   th = text(cols/2 - cols/5, rows/10, sprintf('layers: %0.2f', ...
@@ -156,9 +159,9 @@ if VIS < 500;
   vl_tightsubplot(3,4,11);
   imagesc(occf_cbf_prob); axt; notick;
 
-  %------------------------------------------------------------------
+  %---------------------------------------------------------------------------
   % Other images
-  %------------------------------------------------------------------
+  %---------------------------------------------------------------------------
   % kappa (with newly obtained boxes)
   fig(150);
   vl_tightsubplot(3,4,12);
@@ -180,14 +183,15 @@ if VIS < 500;
   drawnow;
 end
 
+%-----------------------------------------------------------------------------
+% boxes and other figures
+%-----------------------------------------------------------------------------
 if SAVEFIGBOX;
- %--------------- boxes figure ---------------------
   % boxes + fg prior
-  % kappa (with old boxes for this segmentation)
   fgkappa = kappa_fg_img;
   bkappa = kappa_box_img;
-  fgbkappa = sc(reshape(clip(kappa, 0, 1), imsize), 'jet', [0, params.PROB_FG]);
-  fgbkappa = 0.6 * fgbkappa + 0.4 * repmat(i1, [1,1,3]);
+  tmp = sc(reshape(clip(kappa, 0, 1), imsize), 'jet', [0, params.PROB_FG]);
+  fgbkappa = 0.6 * tmp + 0.4 * repmat(i1, [1,1,3]);
   tt = sprintf('kappa: %0.2f', max(vec(kappa)));
   if BOXHELP && ~isempty(past.boxes);
     pbox_xy = bbox_to_box_center(past.boxes);
@@ -262,9 +266,9 @@ if SAVEFIGBOX;
   % imwrite(uint8(255*sc(pwx, 'jet')), aawx, 'png');
 end
 
-%--------------------------------------------------------------------
+%-----------------------------------------------------------------------------
 % Saving results / printing
-%--------------------------------------------------------------------
+%-----------------------------------------------------------------------------
 name = sprintf(nameStr, seq, k);
 outResFile = fullfile(outpath, name);
 
@@ -281,8 +285,8 @@ vis_cues_img = vis_cues(I1, constraints, min(1.0, constraint_weights));
 outCuesFile = fullfile(outpath, [name, '_cue_', versiontype, '.png']);
 imwrite(imresize(vis_cues_img, 0.5), outCuesFile, 'png');
 
-%------------------------------------------------------------------
+%-----------------------------------------------------------------------------
 % results saving
-%------------------------------------------------------------------
+%-----------------------------------------------------------------------------
 save([outResFile, '_lay_', versiontype, '.mat'], 'lay', 'object_map');
 end

@@ -1,44 +1,45 @@
-%-------------------------------------------------------------------------
+%-----------------------------------------------------------------------------
 % cvos_update_objects
 %
-% % @param: objects : structure array of objects
-% @param: object_map : image of object labels obtained from 
-%   layers_to_detachable_objects fxn call
-% @param: uvf : flow from t to t+1
+% this function assigns the object proposals obtained from the current layers
+% to one of the old objects already existing in the video OR to a new object
+% based on the overlap of proposal in the current frame and the old object
 %
-% @note: object representation
-% * id : id of object
-% * u, v : average motion of the object
-%-------------------------------------------------------------------------
+% @return: objects_out: updated structure array of object info
+% @return: object_map: label map obtained from layers_to_detachable_objects
+%   (unique object instances)
+% @return: n_active: the number of active objects (still in the field of view)
+% @param: objects: structure array of object info
+%   * id: id of object
+%   * u, v: average motion of the object
+% @param: object_map: the object label map we have maintained through history
+% @param: object_map_snap: the object label map obtained from running the fxn 
+%   layers_to_detachable_objects from the current frame (immediate unique 
+%   instances)
+% @param: uvb_warp: flow from t to t-1
+% @param: uvf: flow from t to t+1
+%-----------------------------------------------------------------------------
 function [objects_out, object_map_out, n_active] = cvos_update_objects( ...
   objects, object_map, object_map_snap, uvb_warp, uvf)
 nnewobjects = max(object_map_snap(:));
-
 ids_alive_objects = vec(unique(object_map(:)));
 if ids_alive_objects(1) == 0; ids_alive_objects(1) = []; end;
 if isempty(ids_alive_objects); ids_alive_objects = []; end;
 n_alive_objects = length(ids_alive_objects);
+[rows, cols, ~] = size(uvf); imsize = [rows, cols];
+u = uvf(:, :, 1); v = uvf(:, :, 2);
 
-[rows, cols, ~] = size(uvf);
-imsize = [rows, cols];
-
-u = uvf(:, :, 1);
-v = uvf(:, :, 2);
-
-%-------------------------------------------------------------------------
-% warp old object map from past frame into frame t0
-%-------------------------------------------------------------------------
+% warp old object map from past frame into the current frame
 object_map_t0 = utils_warp_image(double(object_map), uvb_warp);
 object_map_t0(isnan(object_map_t0) | isinf(object_map_t0)) = 0.0;
 object_map_out = zeros(imsize, 'single');
 
-%-------------------------------------------------------------------------
-% for each object in object_map_snap, attach object or create new one
-%-------------------------------------------------------------------------
+%-----------------------------------------------------------------------------
+% for each object proposal in object_map_snap, assign it to an existing 
+% object or create a new one for it
+%-----------------------------------------------------------------------------
 max_id = 0;
-if ~isempty(objects);
-  ids = cat(1, objects.id); max_id = max(ids);
-end
+if ~isempty(objects); ids = cat(1, objects.id); max_id = max(ids); end
 
 % lifted representation of alive object maps
 obj_maps = false([rows, cols, n_alive_objects]);
@@ -49,12 +50,10 @@ end
 ids_new = []; nadd = 0;
 ids_still_alive_objects = []; n_still_alive_objects = 0;
 for k = 1:nnewobjects;
-  % 1. assign an object to this snap_object or create a new object for it
   snap_mask = object_map_snap == k;
   
-  % find object with greatest overlap
+  % evaluate overlap (using fmeasure) of proposal and each existing object
   f1max = -1.0;
-
   if n_alive_objects > 0;
     f1 = zeros(n_alive_objects, 1, 'single');
     for j = 1:n_alive_objects;
@@ -64,18 +63,15 @@ for k = 1:nnewobjects;
     f1(isnan(f1)) = -1.0;
     [f1max, id_ind] = max(f1);
   end
-
   
-  % decide if old object (high overlap) or new one (low overlap)
+  % decide if proposal is an old object (high score) or new one (low score)
   if (f1max > 0.5); % old object
     snap_id = ids_alive_objects(id_ind);
-
     ids_still_alive_objects = cat(1, ids_still_alive_objects, snap_id);
     n_still_alive_objects = n_still_alive_objects + 1;
   else % new object
     snap_id = max_id + 1;
     max_id = snap_id;
-
     ids_new = cat(1, ids_new, snap_id);
     nadd = nadd + 1;
   end
@@ -89,10 +85,10 @@ n_alive_objects_t0 = n_alive_objects + nadd;
 ids_spawn_objects = ids_new;
 n_spawn_objects = nadd;
 
-%-------------------------------------------------------------------------
-% post-process output object map to make sure no disconnected componenets
+%-----------------------------------------------------------------------------
+% post-process output object map to ensure no disconnected components
 % have the same object id
-%-------------------------------------------------------------------------
+%-----------------------------------------------------------------------------
 object_map_to_add = zeros(imsize, 'single');
 nadd = 0; ids_new = [];
 for j = 1:n_alive_objects_t0;
@@ -113,9 +109,9 @@ object_map_out(ind) = object_map_to_add(ind);
 ids_spawn_objects = cat(1, ids_spawn_objects, ids_new);
 n_spawn_objects = n_spawn_objects + nadd;
 
-%-------------------------------------------------------------------------
-% update objects after fully deciding on new object map
-%-------------------------------------------------------------------------
+%-----------------------------------------------------------------------------
+% update objects after finalizing object map
+%-----------------------------------------------------------------------------
 % update flow for persisting objects
 if n_still_alive_objects > 0;
   ids = cat(1, objects.id);
@@ -136,7 +132,7 @@ if n_still_alive_objects > 0;
   end
 end
 
-% 2. create and compute flow for new objects
+% create and compute flow for new objects in objects struct
 objects_spawn = [];
 for j = 1:n_spawn_objects;
   mask = object_map_out == ids_spawn_objects(j);

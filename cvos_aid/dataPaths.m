@@ -1,4 +1,24 @@
-function [sequence_name, flow_path, img_path, truth_path, extension, flowtype] = dataPaths(seq)
+%-----------------------------------------------------------------------------
+% dataPaths
+%
+% contains default paths to the datasets we worked with. Please change 
+% variable BASE_PATH to the appropriate one in your directory structure
+%
+% If you want to use a new sequence, the easiest way is to format the
+% data as we have here by placing the image and flow files into two 
+% separate directories and providings their paths and extensions to this file
+%
+% @return: sequence_name: sequence prefix or name
+% @return: flow_path: path to the flow files
+% @return: img_path: path to the image files
+% @return: truth_path: path to the groundtruth files
+% @return: extension: image file extension
+% @return: flowtype: if you have different methods for computing optical flow 
+%   and wish to compare their effects on the performance of this algorithm
+% @param: seq: sequence name (needs to be unique across all datasets you use)
+%-----------------------------------------------------------------------------
+function [sequence_name, flow_path, img_path, truth_path, extension, ...
+  flowtype] = dataPaths(seq)
 
 BASE_PATH = 'example_demo/';
 
@@ -13,8 +33,8 @@ data = set_data_struct(BASE_PATH);
 h = cat(1, data(:).hash );
 idx = find( string2hash(seq) == h);
 if isempty(idx)
-    fprintf('Could not find "%s" in the dataset. Is the name mispelled?\n', seq);
-    return;
+  fprintf('Did not find "%s" in the dataset. Is the name mispelled?\n', seq);
+  return;
 end
 
 sequence_name = data(idx).sequence_name;
@@ -23,14 +43,16 @@ img_path = data(idx).img_path;
 truth_path = data(idx).truth_path;
 extension = data(idx).extension;
 flowtype = data(idx).flowtype;
-
 end
 
+%-----------------------------------------------------------------------------
+% helper function with all the info
+%-----------------------------------------------------------------------------
 function data = set_data_struct(BASE_PATH)
 k=1;
 % -------------------------------------------------------------------------
 %                           MOSEG dataset
-% ------------------------------------------------------------------------
+% -------------------------------------------------------------------------
 data(k).sequence_name = 'cars1';
 data(k).flow_path = [BASE_PATH, '/moseg/', data(k).sequence_name, '/flow/'];
 data(k).img_path = [BASE_PATH,'/moseg/', data(k).sequence_name, '/'];
@@ -109,8 +131,7 @@ data(k).flowtype = 'sun';
 k=k+1;
 % -------------------------------------------------------------------------
 data(k).sequence_name = 'people2';
-% data(k).flow_path = [BASE_PATH, '/moseg/', data(k).sequence_name, '/flow/'];
-data(k).flow_path = [BASE_PATH, '/moseg/', data(k).sequence_name, '/flowsun/'];
+data(k).flow_path = [BASE_PATH, '/moseg/', data(k).sequence_name, '/flow/'];
 data(k).img_path = [BASE_PATH,'/moseg/', data(k).sequence_name, '/'];
 data(k).extension = 'png';
 data(k).flowtype = 'sun';
@@ -244,7 +265,7 @@ data(k).flowtype = 'sun';
 k=k+1;
 % -------------------------------------------------------------------------
 data(k).sequence_name = 'farm1';
-data(k).flow_path = [BASE_PATH, '/moseg/', data(k).sequence_name, '/flowsun/'];
+data(k).flow_path = [BASE_PATH, '/moseg/', data(k).sequence_name, '/flow/'];
 data(k).img_path = [BASE_PATH,'/moseg/', data(k).sequence_name, '/'];
 data(k).extension = 'png';
 data(k).flowtype = 'sun';
@@ -454,26 +475,9 @@ data(k).flowtype = 'sun';
 k=k+1;
 
 % -------------------------------------------------------------------------
-data(k).sequence_name = 'stefano_ski';
-data(k).flow_path = [BASE_PATH, '/', data(k).sequence_name, '/flowsun/'];
-data(k).img_path = [BASE_PATH,'/', data(k).sequence_name, '/'];
-data(k).extension = 'png';
-data(k).flowtype = 'sun';
-k=k+1;
-% -------------------------------------------------------------------------
-
-data(k).sequence_name = 'prost_liquor';
-data(k).flow_path = [BASE_PATH, '/', data(k).sequence_name, '/flowsun/'];
-data(k).img_path = [BASE_PATH,'/', data(k).sequence_name, '/'];
-data(k).extension = 'png';
-data(k).flowtype = 'sun';
-k=k+1;
-
-
-% -------------------------------------------------------------------------
 % -------------------------------------------------------------------------
 %                  Berkeley Video Segmentation Dataset
-% ------------------------------------------------------------------------
+% -------------------------------------------------------------------------
 data(k).sequence_name = 'hockey_goals';
 data(k).flow_path = [BASE_PATH, '/bvds/test/', data(k).sequence_name, '/flow_small/'];
 data(k).img_path = [BASE_PATH,'/bvds/test/', data(k).sequence_name, '/'];
@@ -895,266 +899,8 @@ data(k).flowtype = 'sun';
 k=k+1;
 %--------------------------------------------------------------------
 
-
-% ------------------------------------------------------------------------
-%                   Flickr dataset from karasevRS14
-% ------------------------------------------------------------------------
-data(k).sequence_name = 'ferrari';
-data(k).flow_path = [BASE_PATH, '/flickr/', data(k).sequence_name, '/flow/'];
-data(k).img_path = [BASE_PATH,'/flickr/', data(k).sequence_name, '/'];
-data(k).extension = 'png';
-k=k+1;
-% ------------------------------------------------------------------------
-
-% -------------------------------------------------------------------------
-%                  Ce Liu Motion Segmentation Dataset
-% ------------------------------------------------------------------------
-data(k).sequence_name = 'car1_stabilized';
-data(k).flow_path = [BASE_PATH, '/', data(k).sequence_name, '/flow/'];
-data(k).img_path = [BASE_PATH,'/', data(k).sequence_name, '/'];
-data(k).truth_path = [BASE_PATH,'/', data(k).sequence_name, '/GT/GT_noisy.mat'];
-data(k).extension = 'png';
-k=k+1;
-% ------------------------------------------------------------------------
-data(k).sequence_name = 'car2_stabilized';
-data(k).flow_path = [BASE_PATH, '/', data(k).sequence_name, '/flow/'];
-data(k).img_path = [BASE_PATH,'/', data(k).sequence_name, '/'];
-data(k).truth_path = [BASE_PATH,'/', data(k).sequence_name, '/GT/GT_noisy.mat'];
-data(k).extension = 'png';
-k=k+1;
-
-% -------------------------------------------------------------------------
-%                  SegTrack Dataset
-% ------------------------------------------------------------------------
-data(k).sequence_name = 'birdfall2';
-data(k).flow_path = [BASE_PATH, '/segtrack/', data(k).sequence_name, '/flow/'];
-data(k).img_path = [BASE_PATH,'/segtrack/', data(k).sequence_name, '/'];
-data(k).truth_path = [BASE_PATH,'/segtrack/', data(k).sequence_name, '/GT/GTL.mat'];
-data(k).extension = 'png';
-data(k).flowtype = 'sun';
-k=k+1;
-% ------------------------------------------------------------------------
-data(k).sequence_name = 'parachute';
-data(k).flow_path = [BASE_PATH, '/segtrack/', data(k).sequence_name, '/flow/'];
-data(k).img_path = [BASE_PATH,'/segtrack/', data(k).sequence_name, '/'];
-data(k).truth_path = [BASE_PATH,'/segtrack/', data(k).sequence_name, '/GT/GTL.mat'];
-data(k).extension = 'png';
-data(k).flowtype = 'sun';
-k=k+1;
-% ------------------------------------------------------------------------
-data(k).sequence_name = 'penguin';
-data(k).flow_path = [BASE_PATH, '/segtrack/', data(k).sequence_name, '/flow/'];
-data(k).img_path = [BASE_PATH,'/segtrack/', data(k).sequence_name, '/'];
-data(k).truth_path = [BASE_PATH,'/segtrack/', data(k).sequence_name, '/GT/GTL.mat'];
-data(k).extension = 'png';
-data(k).flowtype = 'sun';
-k=k+1;
-% ------------------------------------------------------------------------
-data(k).sequence_name = 'cheetah';
-data(k).flow_path = [BASE_PATH, '/segtrack/', data(k).sequence_name, '/flow/'];
-data(k).img_path = [BASE_PATH,'/segtrack/', data(k).sequence_name, '/'];
-data(k).truth_path = [BASE_PATH,'/segtrack/', data(k).sequence_name, '/GT/GTL.mat'];
-data(k).extension = 'png';
-data(k).flowtype = 'sun';
-k=k+1;
-% ------------------------------------------------------------------------
-data(k).sequence_name = 'girl';
-data(k).flow_path = [BASE_PATH, '/segtrack/', data(k).sequence_name, '/flow/'];
-data(k).img_path = [BASE_PATH,'/segtrack/', data(k).sequence_name, '/'];
-data(k).truth_path = [BASE_PATH,'/segtrack/', data(k).sequence_name, '/GT/GTL.mat'];
-data(k).extension = 'png';
-data(k).flowtype = 'sun';
-k=k+1;
-% ------------------------------------------------------------------------
-data(k).sequence_name = 'monkeydog';
-data(k).flow_path = [BASE_PATH, '/segtrack/', data(k).sequence_name, '/flow/'];
-data(k).img_path = [BASE_PATH,'/segtrack/', data(k).sequence_name, '/'];
-data(k).truth_path = [BASE_PATH,'/segtrack/', data(k).sequence_name, '/GT/GTL.mat'];
-data(k).extension = 'png';
-data(k).flowtype = 'sun';
-k=k+1;
-
-% -------------------------------------------------------------------------
-%                  VideoSegmentation Dataset
-% ------------------------------------------------------------------------
-data(k).sequence_name = 'atonement';
-data(k).flow_path = [BASE_PATH, '/videosegmentation/', data(k).sequence_name, '/flow/'];
-data(k).img_path = [BASE_PATH,'/videosegmentation/', data(k).sequence_name, '/'];
-data(k).extension = 'png';
-data(k).flowtype = 'sun';
-k=k+1;
-% ------------------------------------------------------------------------
-data(k).sequence_name = 'coraline';
-data(k).flow_path = [BASE_PATH, '/videosegmentation/', data(k).sequence_name, '/flow/'];
-data(k).img_path = [BASE_PATH,'/videosegmentation/', data(k).sequence_name, '/'];
-data(k).extension = 'png';
-data(k).flowtype = 'sun';
-k=k+1;
-% ------------------------------------------------------------------------
-data(k).sequence_name = 'diving';
-data(k).flow_path = [BASE_PATH, '/videosegmentation/', data(k).sequence_name, '/flow/'];
-data(k).img_path = [BASE_PATH,'/videosegmentation/', data(k).sequence_name, '/'];
-data(k).extension = 'png';
-data(k).flowtype = 'sun';
-k=k+1;
-% ------------------------------------------------------------------------
-data(k).sequence_name = 'earth';
-data(k).flow_path = [BASE_PATH, '/videosegmentation/', data(k).sequence_name, '/flow/'];
-data(k).img_path = [BASE_PATH,'/videosegmentation/', data(k).sequence_name, '/'];
-data(k).extension = 'png';
-data(k).flowtype = 'sun';
-k=k+1;
-% ------------------------------------------------------------------------
-data(k).sequence_name = 'flower_garden';
-data(k).flow_path = [BASE_PATH, '/videosegmentation/', data(k).sequence_name, '/flow/'];
-data(k).img_path = [BASE_PATH,'/videosegmentation/', data(k).sequence_name, '/'];
-data(k).extension = 'png';
-data(k).flowtype = 'sun';
-k=k+1;
-% ------------------------------------------------------------------------
-data(k).sequence_name = 'football';
-data(k).flow_path = [BASE_PATH, '/videosegmentation/', data(k).sequence_name, '/flow/'];
-data(k).img_path = [BASE_PATH,'/videosegmentation/', data(k).sequence_name, '/'];
-data(k).extension = 'png';
-data(k).flowtype = 'sun';
-k=k+1;
-% ------------------------------------------------------------------------
-data(k).sequence_name = 'goodfellas_kitchen';
-data(k).flow_path = [BASE_PATH, '/videosegmentation/', data(k).sequence_name, '/flow/'];
-data(k).img_path = [BASE_PATH,'/videosegmentation/', data(k).sequence_name, '/'];
-data(k).extension = 'png';
-data(k).flowtype = 'sun';
-k=k+1;
-% ------------------------------------------------------------------------
-data(k).sequence_name = 'kimyuna2';
-data(k).flow_path = [BASE_PATH, '/videosegmentation/', data(k).sequence_name, '/flow/'];
-data(k).img_path = [BASE_PATH,'/videosegmentation/', data(k).sequence_name, '/'];
-data(k).extension = 'png';
-data(k).flowtype = 'sun';
-k=k+1;
-% ------------------------------------------------------------------------
-data(k).sequence_name = 'nocountryforoldmen';
-data(k).flow_path = [BASE_PATH, '/videosegmentation/', data(k).sequence_name, '/flow/'];
-data(k).img_path = [BASE_PATH,'/videosegmentation/', data(k).sequence_name, '/'];
-data(k).extension = 'png';
-data(k).flowtype = 'sun';
-k=k+1;
-% ------------------------------------------------------------------------
-data(k).sequence_name = 'paris_compare';
-data(k).flow_path = [BASE_PATH, '/videosegmentation/', data(k).sequence_name, '/flow/'];
-data(k).img_path = [BASE_PATH,'/videosegmentation/', data(k).sequence_name, '/'];
-data(k).extension = 'png';
-data(k).flowtype = 'sun';
-k=k+1;
-% ------------------------------------------------------------------------
-data(k).sequence_name = 'publicenemies1';
-data(k).flow_path = [BASE_PATH, '/videosegmentation/', data(k).sequence_name, '/flow/'];
-data(k).img_path = [BASE_PATH,'/videosegmentation/', data(k).sequence_name, '/'];
-data(k).extension = 'png';
-data(k).flowtype = 'sun';
-k=k+1;
-% ------------------------------------------------------------------------
-data(k).sequence_name = 'publicenemies2';
-data(k).flow_path = [BASE_PATH, '/videosegmentation/', data(k).sequence_name, '/flow/'];
-data(k).img_path = [BASE_PATH,'/videosegmentation/', data(k).sequence_name, '/'];
-data(k).extension = 'png';
-data(k).flowtype = 'sun';
-k=k+1;
-% ------------------------------------------------------------------------
-data(k).sequence_name = 'slomo_surfer';
-data(k).flow_path = [BASE_PATH, '/videosegmentation/', data(k).sequence_name, '/flow/'];
-data(k).img_path = [BASE_PATH,'/videosegmentation/', data(k).sequence_name, '/'];
-data(k).extension = 'png';
-data(k).flowtype = 'sun';
-k=k+1;
-% ------------------------------------------------------------------------
-data(k).sequence_name = 'slumdog1';
-data(k).flow_path = [BASE_PATH, '/videosegmentation/', data(k).sequence_name, '/flow/'];
-data(k).img_path = [BASE_PATH,'/videosegmentation/', data(k).sequence_name, '/'];
-data(k).extension = 'png';
-data(k).flowtype = 'sun';
-k=k+1;
-% ------------------------------------------------------------------------
-data(k).sequence_name = 'waterski';
-data(k).flow_path = [BASE_PATH, '/videosegmentation/', data(k).sequence_name, '/flow/'];
-data(k).img_path = [BASE_PATH,'/videosegmentation/', data(k).sequence_name, '/'];
-data(k).extension = 'png';
-data(k).flowtype = 'sun';
-k=k+1;
-% ------------------------------------------------------------------------
-% ------------------------------------------------------------------------
-%              from the Weizmann paper (Frey and Jojic 2001)
-% ------------------------------------------------------------------------
-data(k).sequence_name = 'frey';
-data(k).flow_path = [BASE_PATH, '/', data(k).sequence_name, '/flow/'];
-data(k).img_path = [BASE_PATH,'/', data(k).sequence_name, '/'];
-data(k).extension = 'png';
-data(k).flowtype = 'sun';
-k=k+1;
-
-% ------------------------------------------------------------------------
-%                               ~~~~Cubes~~~~
-% ------------------------------------------------------------------------
-data(k).sequence_name = 'cube1c';
-data(k).flow_path = [BASE_PATH, '/cubes/', data(k).sequence_name, '/flow_gt/'];
-data(k).img_path = [BASE_PATH,'/cubes/', data(k).sequence_name, '/'];
-data(k).extension = 'png';
-data(k).flowtype = 'sun';
-k=k+1;
-% ------------------------------------------------------------------------
-data(k).sequence_name = 'cube2ab';
-data(k).flow_path = [BASE_PATH, '/cubes/', data(k).sequence_name, '/flow/'];
-data(k).img_path = [BASE_PATH,'/cubes/', data(k).sequence_name, '/'];
-data(k).extension = 'png';
-data(k).flowtype = 'sun';
-k=k+1;
-% ------------------------------------------------------------------------
-data(k).sequence_name = 'cube7';
-data(k).flow_path = [BASE_PATH, '/cubes/', data(k).sequence_name, '/flow/'];
-data(k).img_path = [BASE_PATH,'/cubes/', data(k).sequence_name, '/'];
-data(k).extension = 'png';
-data(k).flowtype = 'sun';
-k=k+1;
-% ------------------------------------------------------------------------
-
-
-% ------------------------------------------------------------------------
-%                       random video sequences
-% ------------------------------------------------------------------------
-data(k).sequence_name = 'kim_yu_na_huge';
-data(k).flow_path = [BASE_PATH, '/', data(k).sequence_name, '/flow/'];
-data(k).img_path = [BASE_PATH,'/', data(k).sequence_name, '/'];
-data(k).extension = 'png';
-k=k+1;
-% ------------------------------------------------------------------------
-data(k).sequence_name = 'horse_riding_huge';
-data(k).flow_path = [BASE_PATH, '/', data(k).sequence_name, '/flow/'];
-data(k).img_path = [BASE_PATH,'/', data(k).sequence_name, '/'];
-data(k).extension = 'png';
-k=k+1;
-% ------------------------------------------------------------------------
-data(k).sequence_name = 'cereal_box';
-data(k).flow_path = [BASE_PATH, '/', data(k).sequence_name, '/flow/'];
-data(k).img_path = [BASE_PATH,'/', data(k).sequence_name, '/'];
-data(k).extension = 'png';
-k=k+1;
-% ------------------------------------------------------------------------
-data(k).sequence_name = 'statue';
-data(k).flow_path = [BASE_PATH, '/', data(k).sequence_name, '/flow/'];
-data(k).img_path = [BASE_PATH,'/', data(k).sequence_name, '/'];
-data(k).extension = 'png';
-k=k+1;
-% ------------------------------------------------------------------------
-data(k).sequence_name = 'pierrot_le_fou1';
-data(k).flow_path = [BASE_PATH, '/', data(k).sequence_name, '/flow/'];
-data(k).img_path = [BASE_PATH,'/', data(k).sequence_name, '/'];
-data(k).extension = 'png';
-k=k+1;
-% ------------------------------------------------------------------------
-
 % compute hashes for strings
 for ii=1:length(data)
    data(ii).hash = string2hash( data(ii).sequence_name ); 
 end
-
 end
