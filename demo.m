@@ -21,6 +21,7 @@ cd('..');
 % 2. some setup
 mex_clean
 mex_setup
+setup
 
 % 3. run cvos_run
 % paths to results are editable in cvos_aid/dataPaths.m
