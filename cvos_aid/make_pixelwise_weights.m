@@ -1,23 +1,20 @@
 %-----------------------------------------------------------------------------
 % make_pixelwise_weights
 %
-% @return: constraints_: constraints post warping forward in time
-% @return: w_uv: associated weights post warping (larger warp -> larger decay)
-% @return: valid: which boxes are valid and which are not
-% @param: constraints: constraints in prior frame to warp forward
-% @param: uvb_rev (MxNx2): warping to use to propagate constraints from prior 
-%   frame to current one
-% @param: SAFESPEEDSQUARED: parameter that affects weight decay w.r.t. warp
+% computes pixelwise weights on the current frame using intensity, flow, and
+% edge information
+%
+% @return: w: final computed weights
+% @param: idx: occluder-occluded constraints
+% @param: I: current image frame
+% @param: uv{b,f}_ (MxNx2): backward and forward flow from t to t-1 and t+1
+% @param: gpb: edge map strength
+% @param: weights: initial weights computed elsewhere, which we multiply by w
+% @param: opts: structure of options and parameters
 %-----------------------------------------------------------------------------
-
-
-
-
 function w = make_pixelwise_weights(idx, I, uvb_, uvf_, gpb, weights, opts)
 
-%-----------------------------------------------------------------------------
 % settings 
-%-----------------------------------------------------------------------------
 WEIGHT_MAG_THRESHOLD = 0.65;
 THETA = 0.2;
 MINWUV = 5e-3;
@@ -30,9 +27,9 @@ weights = weights/sum(weights);
 imsize = [rows, cols];
 n = rows * cols;
 
-%--------------------------------------------------------------------
+%-----------------------------------------------------------------------------
 % meat
-%--------------------------------------------------------------------
+%-----------------------------------------------------------------------------
 I = reshape(I, [numel(I)/chan, chan]);
 uvf = reshape(uvf_, [numel(uvf_)/2, 2]);
 uvb = reshape(uvb_, [numel(uvb_)/2, 2]);
@@ -69,7 +66,8 @@ if weights(2)>0
   theta_dist = (df + db)/2;
   w_theta = exp( -theta_dist(:)/THETA );
   w_theta = repmat(w_theta,[2,1]);
-  w_uv = w_mag .* ( w_theta.*(w_mag <= WEIGHT_MAG_THRESHOLD) + (w_mag > WEIGHT_MAG_THRESHOLD) );
+  w_uv = w_mag .* ( w_theta.*(w_mag <= WEIGHT_MAG_THRESHOLD) ...
+    + (w_mag > WEIGHT_MAG_THRESHOLD) );
 else
   w_uv = zeros( length(idx1), 1);        
 end
