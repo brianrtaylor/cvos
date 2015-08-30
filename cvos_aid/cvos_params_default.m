@@ -44,17 +44,14 @@ params.DO_FOREGROUND_WARP_WEIGHT = true;
 params.DO_WEIGHT_WARP_WEIGHT = true;
 
 params.VIS = 500;
-params.LOADFLOW = true;
 params.m = [];
 
-% killed if not a part of any segmentation for about 5 frames
 params.UNARY_CONSTRAINT_MEMORY_FACTOR = 0.20;
 params.CONSTRAINT_MEMORY_FACTOR = 0.20; 
 params.WEIGHT_MEMORY_FACTOR = 0.20;
 params.FG_MEMORY_FACTOR = 0.20;
 params.TV_MEMORY_FACTOR = 0.20;
 
-% kill em off in 2 frames
 params.CONSTRAINT_INSIDE_FG_MEMORY_FACTOR = 0.5;
 params.OCC_INSIDE_FG_MEMORY_FACTOR = 0.5;
 params.OCC_INSIDE_WEIGHTS_MEMORY_FACTOR = 0.5;

@@ -29,6 +29,9 @@ Dependencies:
         flow does), so we modified their version to filter two-channel images 
         (as a special case), and also included a MATLAB wrapper.
 
+    * SC - powerful image rendering for visualizing output (INCLUDED)
+        (http://www.mathworks.com/matlabcentral/fileexchange/16233-sc-powerful-image-rendering)
+
 You must run "mex_setup.m" in prior to anything
 
 ==============================================================================

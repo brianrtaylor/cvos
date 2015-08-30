@@ -52,12 +52,12 @@ PKG.TV_MEMORY_FACTOR = 0.20;
 PKG.FG_MEMORY_FACTOR = 0.20;
 PKG.DO_UNITY_WARP_WEIGHT = true;
 PKG.UNITYHELP = true;
-PKG.PROB_UNITY = 0.5; % dunno where this is used lol
+PKG.PROB_UNITY = 0.5;
 
 PKG.CAUSAL = true;
 PKG.DO_FORBACKCAUSAL = false; % if true, for noncausal version
 PKG.TEST = false; % if true, doesn't process first and last frame
-PKG.VIS = 499; % how much visualization is displayed
+PKG.VIS = 499; % constrols amount of visualization is displayed
 
 if strcmp(model, 'fullboxfig');
   PKG.DO_FORBACKCAUSAL = false;
