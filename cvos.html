@@ -1,0 +1,68 @@
+<html>
+<head>
+<link href="./style/stylesheet.css" rel="stylesheet">
+
+<title>Causal Video Object Segmentation from Persistence of Occlusions</title>
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-61716880-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'UA-61716880-1');
+</script>
+
+</style></head>
+
+<div class="col-main" style="min-width: 600px" role="main">
+
+<h1>Causal Video Object Segmentation from Persistence of Occlusions</h1>
+
+<h2>Abstract</h2>
+
+<p>Occlusion relations inform the partition of the image domain into "objects" but are difficult to determine from a single image or short-baseline video. We show how long-term occlusion relations can be robustly inferred from video, and used within a convex optimization framework to segment the image domain into regions. We highlight the challenges in determining these occluder/occluded relations and ensuring regions remain temporally consistent, propose strategies to overcome them, and introduce an efficient numerical scheme to perform the partition directly on the pixel grid, without the need for superpixelization or other preprocessing steps.</p>
+
+<h2>Sample Outcomes</h2>
+<a href="data/sample.png"><img class="overview" src="data/sample.png" style="max-width:100%"></a>
+
+<p><em>Depth-layer output of our scheme (larger values indicate increasing proximity to the viewer): background c(x)=0 (gray) and foreground layers c(x)=1, c(x)=2, c(x)=3 indicated by the colors <img class="sq" src="data/misc/lay1.png">, <img class="sq" src="data/misc/lay2.png">, <img class="sq" src="data/misc/lay3.png"> respectively. On the far right, our algorithm correctly infers that the bag strap is in front of the woman's arm, which is in front of her trunk, which is in front of the background.</em></p>
+
+<h2>Overview</h2>
+The following video describes our approach at a high-level, detailing each of the cues we leverage to produce our temporally consistent results, and illustrates the results of our method applied to a number of videos. <br>
+ <div class="wrapper">
+ <iframe src="https://www.youtube.com/embed/A6xTzfwPkVM?rel=0&amp;controls=1&amp;showinfo=0" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen controls></iframe>
+ </div>
+
+<h2>Framework</h2>
+The figure below summarizes our pipeline. Input video and optical flow are used to extract local ordering constraints from occlusions detected in the current frame. Combined with temporal consistency priors (foreground prior, persistent layer boundaries, and aggregated occlusion constraints) from past frames, these cues feed a global optimization problem that partitions the image domain into coarse depth layers, the connected components of which yield "objects". The result is a temporally consistent object segmentation over the course of the video.
+
+<a href="data/framework.jpg"><img class="overview" src="data/framework.jpg" style="padding:10px;max-width:100%"></a>
+
+The method operates causally, allowing it to scale to long or even streaming videos, provides both object labels and depth layer labels, solves this problem efficiently directly on the pixel-grid, and requires no training step for detecting objects.
+
+<h2>Code <a href="https://github.com/brianrtaylor/cvos"><img src="data/misc/github.png" class="logoimage" alt="github"></a> </h2>
+
+<p> Our MATLAB implementation is available on <a href="https://github.com/brianrtaylor/cvos">github</a>. We evaluated our approach on video sequences from MOSEG [1] and Berkeley Video Segmentation [2]. Installation instructions are provided in the README, which explains that only <a href="http://www.vlfeat.org/download.html">vlfeat</a> is needed in addition to the provided code. The demo.m script runs our framework on an example sequence (cars5) from the MOSEG [1] dataset, which is downloaded by the script if needed. To run it, start MATLAB and run "demo". </p><br>
+
+<p>If you use this work in your research, please cite our paper:</p>
+
+<ul>
+<li>Causal Video Object Segmentation from Persistence of Occlusions<br>
+B. Taylor, V. Karasev, and S. Soatto<br>
+In CVPR, 2015. (<a href="https://www.cv-foundation.org/openaccess/content_cvpr_2015/papers/Taylor_Causal_Video_Object_2015_CVPR_paper.pdf">paper</a>, <a href="http://fmdb.cs.ucla.edu/Treports/taylorKS15TR.pdf">technical report</a>, <a href="data/taylorKS15_poster.pdf">poster</a>, <a href="data/tks15_abstract.pdf">abstract</a>)</li>
+</ul>
+
+<h2>References</h2>
+<ol>
+<li>T. Brox and J. Malik. Object segmentation by long term analysis of point trajectories. In ECCV, 2010</li>
+<li>P. Sundberg, T. Brox, M. Maire, P. Arbelaez, and J. Malik.
+Occlusion boundary detection and figure/ground assignment from optical flow. In CVPR, 2011.</li>
+</ol>
+
+<hr>
+
+<p>If you have any questions, please contact <a href="mailto:brianrtaylor.mail@gmail.com">Brian Taylor</a> and/or <a href="mailto:karasev00@gmail.com">Vasiliy Karasev.</a>
+
+</div>
+</body>
+</html>
