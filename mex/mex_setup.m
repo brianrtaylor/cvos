@@ -32,7 +32,8 @@ fprintf('Built solver.\n');
 % % -------------------------------------------------------------------------
 % %                   build GMM learning (using VLFEAT)
 % % -------------------------------------------------------------------------
-cmd = sprintf('mex learn_constraint_gmm_mex.cpp CFLAGS="-std=c99 -O -fPIC -DVL_DISABLE_SSE2 -DVL_DISABLE_AVX" CXXFLAGS="-O -fPIC " -I%s ', VLFEAT_SRC);
+cmd = sprintf('mex learn_constraint_gmm_mex.cpp CFLAGS="-std=c99 -O -fPIC -DVL_DISABLE_SSE2 -DVL_DISABLE_AVX" CXXFLAGS="-O -fPIC " -I%s -fpermissive ', VLFEAT_SRC);
+cmd = sprintf('%s -L%s -lvl', cmd, VLFEAT_LIB);
 cmd = sprintf('%s %s/generic.c ',   cmd, VLFEAT_SRC);
 cmd = sprintf('%s %s/gmm.c ',       cmd, VLFEAT_SRC);
 cmd = sprintf('%s %s/kmeans.c ',    cmd, VLFEAT_SRC);
